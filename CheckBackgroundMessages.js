@@ -6,7 +6,6 @@ import {filter} from './App';
 const CheckBackgroundMessages = async taskData => {
   const newSms = filter;
   console.log(taskData);
-  console.log('aoskdoaskdasokdasokdasokdoaskd');
   const permissions = [
     PermissionsAndroid.PERMISSIONS.SEND_SMS,
     PermissionsAndroid.PERMISSIONS.READ_SMS,

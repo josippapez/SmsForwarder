@@ -8,7 +8,6 @@
 
 import React, {useState} from 'react';
 import {
-  Button,
   ColorValue,
   PermissionsAndroid,
   SafeAreaView,
@@ -29,6 +28,8 @@ import CheckBackgroundMessagesNativeModule from './CheckBackgroundMessagesNative
 import CustomButton from './Components/Shared/CustomButton';
 import ToggleModal from './Components/ToggleModal';
 import {Fonts} from './Fonts';
+import {useAppDispatch, useAppSelector} from './store/hooks';
+import {setBody, setIncludes, setPhoneNumber} from './store/reducers/settings';
 
 type SectionProps = {
   children?: String;
@@ -73,8 +74,11 @@ export var filter = {
 };
 
 const App: () => JSX.Element = () => {
+  const dispatch = useAppDispatch();
   const isDarkMode = useColorScheme() === 'dark';
-  const [filterInput, setFilterInput] = useState(filter);
+  const settings = useAppSelector(state => state.settings);
+
+  const [filterInput, setFilterInput] = useState(settings);
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(false);
 
@@ -98,6 +102,15 @@ const App: () => JSX.Element = () => {
 
   React.useEffect(() => {
     filter = filterInput;
+    if (filterInput.includes) {
+      dispatch(setIncludes(filterInput.includes));
+    }
+    if (filterInput.phoneNumber) {
+      dispatch(setPhoneNumber(filterInput.phoneNumber));
+    }
+    if (filterInput.body) {
+      dispatch(setBody(filterInput.body));
+    }
   }, [filterInput]);
 
   React.useEffect(() => {

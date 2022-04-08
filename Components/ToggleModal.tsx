@@ -20,14 +20,20 @@ type Props = {
 
 function ToggleModal(props: Props) {
   const {enabled, toggleSwitch, visible, setVisible, isDarkMode} = props;
+  var animation = new Animated.Value(0);
 
   return (
     <Modal
       visible={visible}
       transparent
       statusBarTranslucent
-      onRequestClose={() => setVisible(false)}
-      animationType="slide">
+      onRequestClose={() => {
+        setVisible(false);
+      }}
+      animationType="slide"
+      onShow={() => {
+        fadeIn(animation, 0.5, 250, true);
+      }}>
       <TouchableWithoutFeedback
         onPress={() => {
           setVisible(false);
@@ -35,7 +41,7 @@ function ToggleModal(props: Props) {
         <Animated.View
           style={{
             flex: 1,
-            opacity: 0,
+            opacity: animation,
             backgroundColor: isDarkMode ? 'black' : '#4d4d4d',
           }}
         />

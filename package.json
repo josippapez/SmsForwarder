@@ -10,13 +10,18 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.17.3",
+    "@reduxjs/toolkit": "^1.8.1",
     "@types/react-native": "^0.67.3",
+    "@types/react-redux": "^7.1.23",
     "react": "17.0.2",
     "react-native": "0.68.0",
     "react-native-android-sms-listener": "^0.8.0",
     "react-native-create-bridge": "^2.0.1",
     "react-native-get-sms-android": "^2.1.0",
-    "react-native-select-contact": "^1.6.3"
+    "react-native-select-contact": "^1.6.3",
+    "react-redux": "^7.2.8",
+    "redux-persist": "^6.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",

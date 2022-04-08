@@ -10,6 +10,6 @@ export const fadeIn = (
     useNativeDriver: useNativeDriver ?? true,
     toValue: value,
     duration: duration,
-    easing: Easing.inOut(Easing.linear),
+    easing: Easing.in(Easing.exp),
   } as Animated.TimingAnimationConfig).start();
 };
