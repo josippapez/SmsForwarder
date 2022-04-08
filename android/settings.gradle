@@ -1,0 +1,15 @@
+rootProject.name = 'SmsForwarder'
+include ':react-native-get-sms-android'
+project(':react-native-get-sms-android').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-get-sms-android/android')
+include ':react-native-select-contact'
+project(':react-native-select-contact').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-select-contact/android')
+include ':react-native-android-sms-listener'
+project(':react-native-android-sms-listener').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-android-sms-listener/android')
+apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
+include ':app'
+includeBuild('../node_modules/react-native-gradle-plugin')
+
+if (settings.hasProperty("newArchEnabled") && settings.newArchEnabled == "true") {
+    include(":ReactAndroid")
+    project(":ReactAndroid").projectDir = file('../node_modules/react-native/ReactAndroid')
+}

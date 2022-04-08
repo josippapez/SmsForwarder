@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SmsForwarder</string>
+    <string name="channel_name">background notification</string>
+    <string name="channel_description">background notification</string>
+</resources>
