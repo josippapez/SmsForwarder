@@ -1,13 +1,13 @@
 import {createSlice} from '@reduxjs/toolkit';
 
 export interface SettingsState {
-  includes: string;
+  includes: string[];
   phoneNumber: string;
   body: string;
 }
 
 const initialState: SettingsState = {
-  includes: '',
+  includes: [],
   phoneNumber: '',
   body: '',
 };

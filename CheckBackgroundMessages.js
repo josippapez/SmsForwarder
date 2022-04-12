@@ -13,10 +13,8 @@ const CheckBackgroundMessages = async taskData => {
   ];
   await PermissionsAndroid.requestMultiple(permissions);
   SmsListener.addListener(message => {
-    if (
-      message.body.toLowerCase().includes(newSms.includes.toLocaleLowerCase())
-    ) {
-      console.log(message.body.includes(newSms.includes));
+    if (newSms.includes.some(word => message.body.includes(word))) {
+      console.log('Message received: ', message);
       SmsAndroid.autoSend(
         JSON.stringify(newSms.phoneNumber),
         newSms.body,

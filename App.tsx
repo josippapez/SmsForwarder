@@ -21,6 +21,7 @@ import {
   TextStyle,
   useColorScheme,
   View,
+  ViewStyle,
 } from 'react-native';
 import {selectContactPhone} from 'react-native-select-contact';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
@@ -30,25 +31,33 @@ import ToggleModal from './Components/ToggleModal';
 import {Fonts} from './Fonts';
 import {useAppDispatch, useAppSelector} from './store/hooks';
 import {setBody, setIncludes, setPhoneNumber} from './store/reducers/settings';
+import Images from './Styles/Images/index';
 
 type SectionProps = {
   children?: String;
   title: string;
   boldedTitle?: boolean;
+  sectionStyle?: ViewStyle;
+  titleStyle?: TextStyle;
 };
 
 export const Section = (props: SectionProps): JSX.Element => {
   const isDarkMode = useColorScheme() === 'dark';
-  const {title, children, boldedTitle} = props;
+  const {title, children, boldedTitle, sectionStyle, titleStyle} = props;
   return (
-    <View style={styles.sectionContainer}>
+    <View style={[styles.sectionContainer, sectionStyle]}>
       <Text
         style={[
           styles.sectionTitle,
           {
             color: isDarkMode ? Colors.white : Colors.black,
-            fontWeight: boldedTitle ? Fonts.bold : Fonts.normal,
+            fontWeight: boldedTitle
+              ? titleStyle?.fontWeight
+                ? titleStyle.fontWeight
+                : Fonts.bold
+              : Fonts.normal,
           },
+          titleStyle,
         ]}>
         {title}
       </Text>
@@ -68,7 +77,7 @@ export const Section = (props: SectionProps): JSX.Element => {
 };
 
 export var filter = {
-  includes: '',
+  includes: [''],
   phoneNumber: '',
   body: '',
 };
@@ -93,11 +102,12 @@ const App: () => JSX.Element = () => {
   const inputBackgroundStyle: Partial<TextStyle> = {
     borderWidth: 1,
     fontSize: 20,
-    borderRadius: 5,
+    borderRadius: 10,
     borderColor: 'transparent',
-    backgroundColor: isDarkMode ? Colors.dark : '#dceaf9',
+    backgroundColor: isDarkMode ? '#636363' : '#ffffff',
     color: isDarkMode ? Colors.white : Colors.black,
     paddingHorizontal: 10,
+    flexGrow: 1,
   };
 
   React.useEffect(() => {
@@ -154,60 +164,190 @@ const App: () => JSX.Element = () => {
           paddingVertical: 20,
         }}
         style={backgroundStyle}>
-        <Section boldedTitle title="SMS Forwarder" />
-        <Section title="Message includes..." />
-        <TextInput
-          style={inputBackgroundStyle}
-          value={filterInput.includes}
-          onChangeText={text =>
-            setFilterInput({...filterInput, includes: text})
-          }
-        />
-        <Section title="Phone number">
-          Choose a phone number to forward SMS to
-        </Section>
-        <TextInput
-          style={inputBackgroundStyle}
-          value={filterInput.phoneNumber}
-          onChangeText={text => {
-            setFilterInput({...filterInput, phoneNumber: text});
+        <Section
+          boldedTitle
+          title="SMS Forwarder"
+          sectionStyle={{
+            paddingVertical: 20,
           }}
         />
-        <Section title="OR" boldedTitle />
-        <CustomButton
-          title="Select phone number"
-          cb={async () => {
-            await PermissionsAndroid.requestMultiple([
-              PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
-              PermissionsAndroid.PERMISSIONS.READ_PHONE_NUMBERS,
-            ]);
-            const phone = await getPhoneNumber();
-            setFilterInput({...filterInput, phoneNumber: phone});
-          }}
-          buttonStyle={{
-            borderRadius: 16,
-            width: 'auto',
-            elevation: 2,
-            paddingHorizontal: 26,
-            paddingVertical: 16,
-          }}
-          textStyle={{
-            fontWeight: 'bold',
-          }}
-        />
-        <Section title="Text" />
-        <TextInput
-          style={inputBackgroundStyle}
-          value={filterInput.body}
-          onChangeText={text => setFilterInput({...filterInput, body: text})}
-        />
-        <Section title="Turn on/off" />
+        <View
+          style={{
+            paddingVertical: 30,
+            paddingHorizontal: 20,
+            borderRadius: 30,
+            backgroundColor: isDarkMode ? Colors.dark : '#f5f5f5',
+          }}>
+          <Section
+            sectionStyle={{
+              marginTop: 0,
+            }}
+            titleStyle={{
+              fontWeight: Fonts['500'],
+            }}
+            title="Message includes...">
+            Includes any of the inputs
+          </Section>
+          {filterInput.includes &&
+            filterInput.includes.length > 0 &&
+            filterInput.includes.map((item, index) => (
+              <View
+                key={index}
+                style={{
+                  flexDirection: 'row',
+                  marginTop: index > 0 ? 10 : 0,
+                }}>
+                <TextInput
+                  style={inputBackgroundStyle}
+                  value={item}
+                  onChangeText={text =>
+                    setFilterInput({
+                      ...filterInput,
+                      includes: [
+                        ...filterInput.includes.slice(0, index),
+                        text,
+                        ...filterInput.includes.slice(index + 1),
+                      ],
+                    })
+                  }
+                />
+                <CustomButton
+                  cb={() =>
+                    setFilterInput(
+                      filterInput.includes.length > 0
+                        ? {
+                            ...filterInput,
+                            includes: [
+                              ...filterInput.includes.slice(0, index),
+                              ...filterInput.includes.slice(index + 1),
+                            ],
+                          }
+                        : filterInput,
+                    )
+                  }
+                  backgroundimage={{
+                    image: isDarkMode ? Images.minusWhite : Images.minus,
+                    style: {
+                      width: 30,
+                      height: 30,
+                    },
+                  }}
+                  buttonStyle={{
+                    marginLeft: 15,
+                  }}
+                />
+              </View>
+            ))}
+          {filterInput.includes.length && filterInput.includes.length < 7 && (
+            <CustomButton
+              buttonStyle={{
+                marginTop: 20,
+              }}
+              cb={() =>
+                setFilterInput(
+                  filterInput.includes.length > 0
+                    ? {
+                        ...filterInput,
+                        includes: [...filterInput.includes, ''],
+                      }
+                    : {
+                        ...filterInput,
+                        includes: [''],
+                      },
+                )
+              }
+              backgroundimage={{
+                image: isDarkMode ? Images.addWhite : Images.add,
+                style: {
+                  width: 30,
+                  height: 30,
+                },
+              }}
+            />
+          )}
+        </View>
+        <View
+          style={{
+            paddingVertical: 30,
+            paddingHorizontal: 20,
+            borderRadius: 30,
+            backgroundColor: isDarkMode ? Colors.dark : '#f5f5f5',
+            marginTop: 20,
+          }}>
+          <Section
+            title="Phone number"
+            titleStyle={{
+              fontWeight: Fonts['500'],
+            }}
+            sectionStyle={{
+              marginTop: 0,
+            }}>
+            Choose a phone number to forward SMS to
+          </Section>
+          <TextInput
+            style={inputBackgroundStyle}
+            value={filterInput.phoneNumber}
+            onChangeText={text => {
+              setFilterInput({...filterInput, phoneNumber: text});
+            }}
+          />
+          <Section
+            title="OR"
+            boldedTitle
+            sectionStyle={{
+              marginTop: 20,
+            }}
+          />
+          <CustomButton
+            title="Select phone number"
+            cb={async () => {
+              await PermissionsAndroid.requestMultiple([
+                PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+                PermissionsAndroid.PERMISSIONS.READ_PHONE_NUMBERS,
+              ]);
+              const phone = await getPhoneNumber();
+              setFilterInput({...filterInput, phoneNumber: phone});
+            }}
+            buttonStyle={{
+              borderRadius: 16,
+              width: 'auto',
+              paddingHorizontal: 26,
+              paddingVertical: 16,
+            }}
+            textStyle={{
+              fontWeight: 'bold',
+            }}
+          />
+        </View>
+        <View
+          style={{
+            paddingVertical: 30,
+            paddingHorizontal: 20,
+            borderRadius: 30,
+            backgroundColor: isDarkMode ? Colors.dark : '#f5f5f5',
+            marginTop: 20,
+            marginBottom: 20,
+          }}>
+          <Section
+            title="Text"
+            titleStyle={{
+              fontWeight: Fonts['500'],
+            }}
+            sectionStyle={{
+              marginTop: 0,
+            }}
+          />
+          <TextInput
+            style={inputBackgroundStyle}
+            value={filterInput.body}
+            onChangeText={text => setFilterInput({...filterInput, body: text})}
+          />
+        </View>
         <CustomButton
           title={enabled ? 'Stop' : 'Start'}
           cb={toggleVisible}
           buttonStyle={{
             borderRadius: 16,
-            elevation: 2,
             paddingHorizontal: 26,
             paddingVertical: 16,
           }}

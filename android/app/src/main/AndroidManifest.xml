@@ -30,10 +30,15 @@
         </intent-filter>
       </activity>
       <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" />
-      <service android:name=".checkbackgroundmessages.CheckBackgroundMessagesService"
+      <service
+          android:icon="@mipmap/ic_launcher"
+          android:roundIcon="@mipmap/ic_launcher_round"
+          android:name=".checkbackgroundmessages.CheckBackgroundMessagesService"
           android:enabled="true" android:exported="false" >
       </service>
       <service
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:name=".checkbackgroundmessages.CheckBackgroundMessagesEventService">
       </service>
     </application>

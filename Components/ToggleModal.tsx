@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React from 'react';
 import {
   Animated,
   Modal,
@@ -32,7 +32,7 @@ function ToggleModal(props: Props) {
       }}
       animationType="slide"
       onShow={() => {
-        fadeIn(animation, 0.5, 250, true);
+        fadeIn(animation, 0.5, 250, false);
       }}>
       <TouchableWithoutFeedback
         onPress={() => {
