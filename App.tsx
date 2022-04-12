@@ -238,7 +238,7 @@ const App: () => JSX.Element = () => {
                 />
               </View>
             ))}
-          {filterInput.includes.length && filterInput.includes.length < 7 && (
+          {filterInput.includes && filterInput.includes.length < 7 && (
             <CustomButton
               buttonStyle={{
                 marginTop: 20,

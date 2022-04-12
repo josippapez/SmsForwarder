@@ -62,7 +62,7 @@ function ToggleModal(props: Props) {
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <Section title="Toggle" boldedTitle />
+          <Section title={enabled ? 'Running' : 'Stopped'} boldedTitle />
           <Switch
             trackColor={{
               false: '#767577',
