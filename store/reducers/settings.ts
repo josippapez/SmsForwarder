@@ -7,7 +7,7 @@ export interface SettingsState {
 }
 
 const initialState: SettingsState = {
-  includes: [],
+  includes: [''],
   phoneNumber: '',
   body: '',
 };

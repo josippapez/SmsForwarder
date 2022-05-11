@@ -34,7 +34,7 @@ import {setBody, setIncludes, setPhoneNumber} from './store/reducers/settings';
 import Images from './Styles/Images/index';
 
 type SectionProps = {
-  children?: String;
+  children?: string;
   title: string;
   boldedTitle?: boolean;
   sectionStyle?: ViewStyle;
@@ -61,7 +61,7 @@ export const Section = (props: SectionProps): JSX.Element => {
         ]}>
         {title}
       </Text>
-      {children && (
+      {children ? (
         <Text
           style={[
             styles.sectionDescription,
@@ -71,7 +71,7 @@ export const Section = (props: SectionProps): JSX.Element => {
           ]}>
           {children}
         </Text>
-      )}
+      ) : null}
     </View>
   );
 };
@@ -188,57 +188,57 @@ const App: () => JSX.Element = () => {
             title="Message includes...">
             Includes any of the inputs
           </Section>
-          {filterInput.includes &&
-            filterInput.includes.length > 0 &&
-            filterInput.includes.map((item, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: 'row',
-                  marginTop: index > 0 ? 10 : 0,
-                }}>
-                <TextInput
-                  style={inputBackgroundStyle}
-                  value={item}
-                  onChangeText={text =>
-                    setFilterInput({
-                      ...filterInput,
-                      includes: [
-                        ...filterInput.includes.slice(0, index),
-                        text,
-                        ...filterInput.includes.slice(index + 1),
-                      ],
-                    })
-                  }
-                />
-                <CustomButton
-                  cb={() =>
-                    setFilterInput(
-                      filterInput.includes.length > 0
-                        ? {
-                            ...filterInput,
-                            includes: [
-                              ...filterInput.includes.slice(0, index),
-                              ...filterInput.includes.slice(index + 1),
-                            ],
-                          }
-                        : filterInput,
-                    )
-                  }
-                  backgroundimage={{
-                    image: isDarkMode ? Images.minusWhite : Images.minus,
-                    style: {
-                      width: 30,
-                      height: 30,
-                    },
-                  }}
-                  buttonStyle={{
-                    marginLeft: 15,
-                  }}
-                />
-              </View>
-            ))}
-          {filterInput.includes && filterInput.includes.length < 7 && (
+          {filterInput.includes && filterInput.includes.length > 0
+            ? filterInput.includes.map((item, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: 'row',
+                    marginTop: index > 0 ? 10 : 0,
+                  }}>
+                  <TextInput
+                    style={inputBackgroundStyle}
+                    value={item}
+                    onChangeText={text =>
+                      setFilterInput({
+                        ...filterInput,
+                        includes: [
+                          ...filterInput.includes.slice(0, index),
+                          text,
+                          ...filterInput.includes.slice(index + 1),
+                        ],
+                      })
+                    }
+                  />
+                  <CustomButton
+                    cb={() =>
+                      setFilterInput(
+                        filterInput.includes.length > 0
+                          ? {
+                              ...filterInput,
+                              includes: [
+                                ...filterInput.includes.slice(0, index),
+                                ...filterInput.includes.slice(index + 1),
+                              ],
+                            }
+                          : filterInput,
+                      )
+                    }
+                    backgroundimage={{
+                      image: isDarkMode ? Images.minusWhite : Images.minus,
+                      style: {
+                        width: 30,
+                        height: 30,
+                      },
+                    }}
+                    buttonStyle={{
+                      marginLeft: 15,
+                    }}
+                  />
+                </View>
+              ))
+            : null}
+          {filterInput.includes && filterInput.includes.length < 7 ? (
             <CustomButton
               buttonStyle={{
                 marginTop: 20,
@@ -264,7 +264,7 @@ const App: () => JSX.Element = () => {
                 },
               }}
             />
-          )}
+          ) : null}
         </View>
         <View
           style={{
