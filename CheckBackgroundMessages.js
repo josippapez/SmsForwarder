@@ -1,15 +1,15 @@
-import SmsListener from 'react-native-android-sms-listener';
-import SmsAndroid from 'react-native-get-sms-android';
 import {PermissionsAndroid} from 'react-native';
+import SmsAndroid from 'react-native-get-sms-android';
 import {filter} from './App';
+import SmsListener from './SmsListener';
 
 const CheckBackgroundMessages = async taskData => {
   const newSms = filter;
-  console.log(taskData);
   const permissions = [
     PermissionsAndroid.PERMISSIONS.SEND_SMS,
     PermissionsAndroid.PERMISSIONS.READ_SMS,
     PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE,
+    PermissionsAndroid.PERMISSIONS.RECEIVE_SMS,
   ];
   await PermissionsAndroid.requestMultiple(permissions);
   SmsListener.addListener(message => {

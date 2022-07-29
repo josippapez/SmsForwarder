@@ -16,7 +16,6 @@
     "@reduxjs/toolkit": "^1.8.1",
     "react": "18.0.0",
     "react-native": "0.69.3",
-    "react-native-android-sms-listener": "^0.8.0",
     "react-native-codegen": "^0.71.0",
     "react-native-create-bridge": "^2.0.1",
     "react-native-get-sms-android": "^2.1.0",
