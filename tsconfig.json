@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "jsx": "react-native"
-  },
-  "include": ["./*.ts", "./components/*.ts", "./components/*.tsx"],
-  "exclude": ["node_modules"]
-}
