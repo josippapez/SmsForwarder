@@ -1,14 +1,14 @@
+import {animated, AnimatedStyle} from '@react-spring/native';
 import React from 'react';
 import {
   FlexAlignType,
-  Image,
-  ImageBackground,
   ImageSourcePropType,
   ImageStyle,
   Text,
   TextStyle,
   TouchableOpacity,
   useColorScheme,
+  View,
   ViewStyle,
 } from 'react-native';
 
@@ -20,7 +20,7 @@ type Props = {
   align?: FlexAlignType;
   backgroundimage?: {
     image: ImageSourcePropType;
-    style: ImageStyle;
+    style: ImageStyle | AnimatedStyle<ImageStyle>;
   };
 };
 
@@ -53,20 +53,22 @@ const CustomButton = (props: Props) => {
         },
       ]}
       onPress={cb}>
-      {backgroundimage && (
-        <Image
-          source={backgroundimage.image}
-          style={backgroundimage.style}
-          resizeMode={'cover'}
-        />
-      )}
-      {title && (
-        <Text
-          adjustsFontSizeToFit
-          style={[CustomButton.defaultProps.textStyle, textStyle]}>
-          {title}
-        </Text>
-      )}
+      <View>
+        {backgroundimage && (
+          <animated.Image
+            source={backgroundimage.image}
+            style={backgroundimage.style}
+            resizeMode={'cover'}
+          />
+        )}
+        {title && (
+          <Text
+            adjustsFontSizeToFit
+            style={[CustomButton.defaultProps.textStyle, textStyle]}>
+            {title}
+          </Text>
+        )}
+      </View>
     </TouchableOpacity>
   );
 };

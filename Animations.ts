@@ -11,5 +11,5 @@ export const fadeIn = (
     toValue: value,
     duration: duration,
     easing: Easing.in(Easing.exp),
-  } as Animated.TimingAnimationConfig).start();
+  }).start();
 };

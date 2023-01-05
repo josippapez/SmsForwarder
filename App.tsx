@@ -1,19 +1,11 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-
-import React, {useState} from 'react';
+import {animated} from '@react-spring/native';
+import React, {useEffect, useState} from 'react';
 import {
   ColorValue,
   PermissionsAndroid,
   SafeAreaView,
   ScrollView,
   StatusBar,
-  StatusBarAnimation,
   StatusBarStyle,
   StyleSheet,
   Text,
@@ -24,6 +16,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import {selectContactPhone} from 'react-native-select-contact';
+import uuid from 'react-native-uuid';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import CheckBackgroundMessagesNativeModule from './CheckBackgroundMessagesNativeModule';
 import CustomButton from './Components/Shared/CustomButton';
@@ -77,7 +70,7 @@ export const Section = (props: SectionProps): JSX.Element => {
 };
 
 export var filter = {
-  includes: [''],
+  includes: [{id: '1', text: ''}],
   phoneNumber: '',
   body: '',
 };
@@ -87,7 +80,6 @@ const App: () => JSX.Element = () => {
   const isDarkMode = useColorScheme() === 'dark';
   const settings = useAppSelector(state => state.settings);
 
-  const [filterInput, setFilterInput] = useState(settings);
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(false);
 
@@ -107,23 +99,14 @@ const App: () => JSX.Element = () => {
     backgroundColor: isDarkMode ? '#636363' : '#ffffff',
     color: isDarkMode ? Colors.white : Colors.black,
     paddingHorizontal: 10,
-    flexGrow: 1,
   };
 
-  React.useEffect(() => {
-    filter = filterInput;
-    if (filterInput.includes) {
-      dispatch(setIncludes(filterInput.includes));
-    }
-    if (filterInput.phoneNumber) {
-      dispatch(setPhoneNumber(filterInput.phoneNumber));
-    }
-    if (filterInput.body) {
-      dispatch(setBody(filterInput.body));
-    }
-  }, [filterInput]);
+  useEffect(() => {
+    filter = settings;
+    setEnabled(false);
+  }, [settings]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (enabled) {
       CheckBackgroundMessagesNativeModule.startService();
     } else {
@@ -145,6 +128,14 @@ const App: () => JSX.Element = () => {
     });
   }
 
+  // const inputTransitions = useTransition(settings.includes, {
+  //   from: {opacity: 0, scale: 0.75, height: 45, imageHeight: 30},
+  //   enter: {opacity: 1, scale: 1, height: 45, imageHeight: 30},
+  //   leave: {opacity: 0, scale: 0.75, height: 0, imageHeight: 0},
+  //   config: {duration: 200},
+  //   trail: 250 / settings.includes.length,
+  // });
+
   return (
     <SafeAreaView>
       <StatusBar
@@ -154,11 +145,12 @@ const App: () => JSX.Element = () => {
         barStyle={
           (isDarkMode ? 'light-content' : 'dark-content') as StatusBarStyle
         }
-        showHideTransition={'fade' as StatusBarAnimation}
+        showHideTransition={'fade'}
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         bounces
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingVertical: 20,
@@ -171,7 +163,7 @@ const App: () => JSX.Element = () => {
             paddingVertical: 20,
           }}
         />
-        <View
+        <animated.View
           style={{
             paddingVertical: 30,
             paddingHorizontal: 20,
@@ -186,74 +178,74 @@ const App: () => JSX.Element = () => {
               fontWeight: Fonts['500'],
             }}
             title="Message includes...">
-            Includes any of the inputs
+            If message includes any of the inputs (case sensitive)
           </Section>
-          {filterInput.includes && filterInput.includes.length > 0
-            ? filterInput.includes.map((item, index) => (
-                <View
-                  key={index}
-                  style={{
-                    flexDirection: 'row',
-                    marginTop: index > 0 ? 10 : 0,
-                  }}>
+          {settings.includes && settings.includes.length > 0
+            ? settings.includes.map((item, index) => (
+                <animated.View
+                  key={item.id}
+                  style={[
+                    {
+                      display: 'flex',
+                      flexDirection: 'row',
+                      marginTop: index > 0 ? 10 : 0,
+                    },
+                  ]}>
                   <TextInput
-                    style={inputBackgroundStyle}
-                    value={item}
-                    onChangeText={text =>
-                      setFilterInput({
-                        ...filterInput,
-                        includes: [
-                          ...filterInput.includes.slice(0, index),
-                          text,
-                          ...filterInput.includes.slice(index + 1),
-                        ],
-                      })
-                    }
+                    style={[
+                      inputBackgroundStyle,
+                      {
+                        flex: 1,
+                      },
+                    ]}
+                    value={item.text}
+                    onChangeText={text => {
+                      dispatch(
+                        setIncludes([
+                          ...settings.includes.slice(0, index),
+                          {
+                            id: item.id,
+                            text,
+                          },
+                          ...settings.includes.slice(index + 1),
+                        ]),
+                      );
+                    }}
                   />
                   <CustomButton
                     cb={() =>
-                      setFilterInput(
-                        filterInput.includes.length > 0
-                          ? {
-                              ...filterInput,
-                              includes: [
-                                ...filterInput.includes.slice(0, index),
-                                ...filterInput.includes.slice(index + 1),
-                              ],
-                            }
-                          : filterInput,
+                      dispatch(
+                        setIncludes([
+                          ...settings.includes.slice(0, index),
+                          ...settings.includes.slice(index + 1),
+                        ]),
                       )
                     }
                     backgroundimage={{
                       image: isDarkMode ? Images.minusWhite : Images.minus,
                       style: {
-                        width: 30,
                         height: 30,
+                        width: 30,
                       },
                     }}
                     buttonStyle={{
-                      marginLeft: 15,
+                      marginLeft: 10,
                     }}
                   />
-                </View>
+                </animated.View>
               ))
             : null}
-          {filterInput.includes && filterInput.includes.length < 7 ? (
+          {settings.includes && settings.includes.length < 7 ? (
             <CustomButton
               buttonStyle={{
                 marginTop: 20,
               }}
               cb={() =>
-                setFilterInput(
-                  filterInput.includes.length > 0
-                    ? {
-                        ...filterInput,
-                        includes: [...filterInput.includes, ''],
-                      }
-                    : {
-                        ...filterInput,
-                        includes: [''],
-                      },
+                dispatch(
+                  setIncludes([
+                    ...settings.includes,
+                    {text: '', id: uuid.v4() as string},
+                  ]),
                 )
               }
               backgroundimage={{
@@ -265,7 +257,7 @@ const App: () => JSX.Element = () => {
               }}
             />
           ) : null}
-        </View>
+        </animated.View>
         <View
           style={{
             paddingVertical: 30,
@@ -282,13 +274,13 @@ const App: () => JSX.Element = () => {
             sectionStyle={{
               marginTop: 0,
             }}>
-            Choose a phone number to forward SMS to
+            Choose a phone number to forward/send SMS to
           </Section>
           <TextInput
             style={inputBackgroundStyle}
-            value={filterInput.phoneNumber}
+            value={settings.phoneNumber}
             onChangeText={text => {
-              setFilterInput({...filterInput, phoneNumber: text});
+              dispatch(setPhoneNumber(text));
             }}
           />
           <Section
@@ -306,7 +298,9 @@ const App: () => JSX.Element = () => {
                 PermissionsAndroid.PERMISSIONS.READ_PHONE_NUMBERS,
               ]);
               const phone = await getPhoneNumber();
-              setFilterInput({...filterInput, phoneNumber: phone});
+              if (phone) {
+                dispatch(setPhoneNumber(phone));
+              }
             }}
             buttonStyle={{
               borderRadius: 16,
@@ -329,18 +323,19 @@ const App: () => JSX.Element = () => {
             marginBottom: 20,
           }}>
           <Section
-            title="Text"
+            title="Custom SMS message"
             titleStyle={{
               fontWeight: Fonts['500'],
             }}
             sectionStyle={{
               marginTop: 0,
-            }}
-          />
+            }}>
+            Leave blank to send the original message
+          </Section>
           <TextInput
             style={inputBackgroundStyle}
-            value={filterInput.body}
-            onChangeText={text => setFilterInput({...filterInput, body: text})}
+            value={settings.body}
+            onChangeText={text => dispatch(setBody(text))}
           />
         </View>
         <CustomButton
@@ -381,12 +376,12 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '600',
   },
   sectionDescription: {
     marginTop: 8,
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '400',
   },
   highlight: {
