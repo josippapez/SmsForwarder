@@ -2,6 +2,7 @@ import {animated} from '@react-spring/native';
 import React, {useEffect, useState} from 'react';
 import {
   ColorValue,
+  NativeModules,
   PermissionsAndroid,
   SafeAreaView,
   ScrollView,
@@ -19,12 +20,21 @@ import {selectContactPhone} from 'react-native-select-contact';
 import uuid from 'react-native-uuid';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import CheckBackgroundMessagesNativeModule from './CheckBackgroundMessagesNativeModule';
+import PermissionsPolicyModal from './Components/PermissionsPolicyModal';
 import CustomButton from './Components/Shared/CustomButton';
 import ToggleModal from './Components/ToggleModal';
 import {Fonts} from './Fonts';
+import SmsListener from './SmsListener';
 import {useAppDispatch, useAppSelector} from './store/hooks';
-import {setBody, setIncludes, setPhoneNumber} from './store/reducers/settings';
+import {
+  setBody,
+  setIncludes,
+  setPhoneNumber,
+  setReadPermissionsPolicy,
+} from './store/reducers/settings';
 import Images from './Styles/Images/index';
+
+const {Sms} = NativeModules;
 
 type SectionProps = {
   children?: string;
@@ -80,11 +90,20 @@ const App: () => JSX.Element = () => {
   const isDarkMode = useColorScheme() === 'dark';
   const settings = useAppSelector(state => state.settings);
 
+  const [displayPermissionsPolicy, setDisplayPermissionsPolicy] =
+    useState(false);
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(false);
 
-  const toggleVisible = () => setVisible(previousState => !previousState);
   const toggleSwitch = () => setEnabled(previousState => !previousState);
+  const toggleVisible = () => {
+    if (!settings.readPermissionsPolicy) {
+      return setDisplayPermissionsPolicy(true);
+    }
+    setVisible(previousState => !previousState);
+  };
+
+  const includeData = settings.includes.map(item => item.text);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? '#000' : 'white',
@@ -109,8 +128,23 @@ const App: () => JSX.Element = () => {
   useEffect(() => {
     if (enabled) {
       CheckBackgroundMessagesNativeModule.startService();
+      SmsListener.addListener(message => {
+        if (includeData.some(word => message.body.includes(word))) {
+          Sms.autoSend(
+            JSON.stringify(settings.phoneNumber),
+            settings.body !== '' ? settings.body : message.body,
+            fail => {
+              console.log('Failed with this error: ' + fail);
+            },
+            success => {
+              console.log('SMS sent successfully', success);
+            },
+          );
+        }
+      });
     } else {
       CheckBackgroundMessagesNativeModule.stopService();
+      SmsListener.stopService();
     }
   }, [enabled]);
 
@@ -351,6 +385,16 @@ const App: () => JSX.Element = () => {
           }}
         />
       </ScrollView>
+      <PermissionsPolicyModal
+        visible={displayPermissionsPolicy}
+        setVisible={(state: boolean) => {
+          setDisplayPermissionsPolicy(state);
+        }}
+        setDisplayToggleModal={() => {
+          setVisible(true);
+          dispatch(setReadPermissionsPolicy(true));
+        }}
+      />
       <ToggleModal
         isDarkMode={isDarkMode}
         visible={visible}

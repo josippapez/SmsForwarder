@@ -4,12 +4,14 @@ import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.provider.Telephony;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
 
 public class SmsListenerModule extends ReactContextBaseJavaModule implements LifecycleEventListener {
     private BroadcastReceiver mReceiver;
@@ -56,6 +58,25 @@ public class SmsListenerModule extends ReactContextBaseJavaModule implements Lif
     @Override
     public void onHostDestroy() {
         // unregisterReceiver(mReceiver);
+    }
+
+    @ReactMethod
+    public void stopService() {
+        Log.d("SmsListenerModule", "stopService");
+        if (isReceiverRegistered) {
+            Log.d("SmsListenerModule", "Stopping service");
+            unregisterReceiver(mReceiver);
+        }
+    }
+
+    @ReactMethod
+    public void addListener(String eventName) {
+        // Keep: Required for RN built in Event Emitter Calls.
+    }
+
+    @ReactMethod
+    public void removeListeners(Integer count) {
+        // Keep: Required for RN built in Event Emitter Calls.
     }
 
     @NonNull

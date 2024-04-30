@@ -4,12 +4,14 @@ export interface SettingsState {
   includes: {id: string; text: string}[];
   phoneNumber: string;
   body: string;
+  readPermissionsPolicy: boolean;
 }
 
 const initialState: SettingsState = {
   includes: [{id: '1', text: ''}],
   phoneNumber: '',
   body: '',
+  readPermissionsPolicy: false,
 };
 
 export const settings = createSlice({
@@ -25,9 +27,13 @@ export const settings = createSlice({
     setBody: (state, action) => {
       state.body = action.payload;
     },
+    setReadPermissionsPolicy: (state, action) => {
+      state.readPermissionsPolicy = action.payload;
+    },
   },
 });
 
-export const {setIncludes, setPhoneNumber, setBody} = settings.actions;
+export const {setIncludes, setPhoneNumber, setBody, setReadPermissionsPolicy} =
+  settings.actions;
 
 export default settings.reducer;
