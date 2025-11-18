@@ -9,8 +9,14 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "expo": "~54.0.24",
+    "expo-build-properties": "^1.0.9",
+    "expo-contacts": "^15.0.10",
+    "expo-dev-client": "^6.0.18",
+    "expo-modules-core": "^3.0.26",
     "expo-status-bar": "~3.0.8",
+    "jotai": "^2.15.1",
     "react": "19.1.0",
     "react-native": "0.81.5"
   },

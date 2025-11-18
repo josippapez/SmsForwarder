@@ -1,0 +1,16 @@
+{
+  "name": "expo-sms-manager",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "build": "expo-module build"
+  },
+  "devDependencies": {
+    "expo-module-scripts": "^4.0.1"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}
