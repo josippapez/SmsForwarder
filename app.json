@@ -24,12 +24,9 @@
         "android.permission.READ_SMS",
         "android.permission.SEND_SMS",
         "android.permission.READ_CONTACTS",
-        "android.permission.READ_PHONE_NUMBERS",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
-        "android.permission.WAKE_LOCK",
-        "android.permission.POST_NOTIFICATIONS",
-        "android.permission.WRITE_CONTACTS"
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "plugins": [

@@ -1,6 +1,12 @@
-import React from 'react';
-import {Modal, Text, TouchableWithoutFeedback, View} from 'react-native';
-import CustomButton from './Shared/CustomButton';
+import React from "react";
+import {
+  Modal,
+  Text,
+  TouchableWithoutFeedback,
+  useColorScheme,
+  View,
+} from "react-native";
+import CustomButton from "./Shared/CustomButton";
 
 type Props = {
   visible: boolean;
@@ -9,7 +15,8 @@ type Props = {
 };
 
 const PermissionsPolicyModal = (props: Props) => {
-  const {visible, setVisible, setDisplayToggleModal} = props;
+  const isDarkMode = useColorScheme() === "dark";
+  const { visible, setVisible, setDisplayToggleModal } = props;
   return (
     <Modal
       visible={visible}
@@ -18,43 +25,49 @@ const PermissionsPolicyModal = (props: Props) => {
       onRequestClose={() => {
         setVisible(false);
       }}
-      animationType="fade">
+      animationType="fade"
+    >
       <TouchableWithoutFeedback
         onPress={e => {
           if (e.currentTarget === e.target) {
             setVisible(false);
           }
-        }}>
+        }}
+      >
         <View
           style={{
             flex: 1,
-            backgroundColor: '#00000099',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
+            backgroundColor: "#00000099",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
           <View
             style={{
-              position: 'absolute',
+              position: "absolute",
               padding: 20,
-              width: '90%',
-              backgroundColor: '#333333',
+              width: "90%",
+              backgroundColor: "#333333",
               borderRadius: 20,
               elevation: 20,
-            }}>
+            }}
+          >
             <View
               style={{
                 flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
               <Text
                 style={{
                   fontSize: 20,
-                  fontWeight: 'bold',
-                  color: '#ffffff',
-                  textAlign: 'center',
-                }}>
+                  fontWeight: "bold",
+                  color: isDarkMode ? "#ffffff" : "#000000",
+                  textAlign: "center",
+                }}
+              >
                 This app requires access to SMS Send, Read and Receive
                 permissions to function properly. You will be asked to grant
                 these permissions when you try to start the app on start button.
@@ -63,9 +76,11 @@ const PermissionsPolicyModal = (props: Props) => {
                 style={{
                   marginTop: 20,
                   fontSize: 16,
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                }}>
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  color: isDarkMode ? "#ffffff" : "#000000",
+                }}
+              >
                 If you're not prompted to grant these permissions, please enable
                 these permissions in your device's apps settings.
               </Text>
@@ -77,8 +92,8 @@ const PermissionsPolicyModal = (props: Props) => {
                 }}
                 buttonStyle={{
                   marginTop: 20,
-                  width: '100%',
-                  backgroundColor: '#ff0000',
+                  width: "100%",
+                  backgroundColor: "#ff0000",
                 }}
               />
             </View>

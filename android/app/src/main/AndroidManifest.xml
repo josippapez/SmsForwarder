@@ -14,8 +14,6 @@
   <!-- Required for contact picker -->
   <uses-permission android:name="android.permission.READ_CONTACTS" />
 
-  <!-- Required for Expo -->
-  <uses-permission android:name="android.permission.INTERNET" />
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW" />
