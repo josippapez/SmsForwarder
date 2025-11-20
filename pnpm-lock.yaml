@@ -11,6 +11,9 @@ importers:
       '@react-native-async-storage/async-storage':
         specifier: ^2.2.0
         version: 2.2.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
+      '@react-spring/native':
+        specifier: ^10.0.3
+        version: 10.0.3(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       expo:
         specifier: ~54.0.24
         version: 54.0.24(@babel/core@7.28.5)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -799,6 +802,33 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  '@react-spring/animated@10.0.3':
+    resolution: {integrity: sha512-7MrxADV3vaUADn2V9iYhaIL6iOWRx9nCJjYrsk2AHD2kwPr6fg7Pt0v+deX5RnCDmCKNnD6W5fasiyM8D+wzJQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@react-spring/core@10.0.3':
+    resolution: {integrity: sha512-D4DwNO68oohDf/0HG2G0Uragzb9IA1oXblxrd6MZAcBcUQG2EHUWXewjdECMPLNmQvlYVyyBRH6gPxXM5DX7DQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@react-spring/native@10.0.3':
+    resolution: {integrity: sha512-ypfKsfqn+Ll3LeZCp+noFBJdJOVomIfnGjpQzpXibrfqWlPgl0Ckj9sy+U3fLGPyrbbCSw9KLvsgSwZwDCScKA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-native: '>=0.78'
+
+  '@react-spring/rafz@10.0.3':
+    resolution: {integrity: sha512-Ri2/xqt8OnQ2iFKkxKMSF4Nqv0LSWnxXT4jXFzBDsHgeeH/cHxTLupAWUwmV9hAGgmEhBmh5aONtj3J6R/18wg==}
+
+  '@react-spring/shared@10.0.3':
+    resolution: {integrity: sha512-geCal66nrkaQzUVhPkGomylo+Jpd5VPK8tPMEDevQEfNSWAQP15swHm+MCRG4wVQrQlTi9lOzKzpRoTL3CA84Q==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@react-spring/types@10.0.3':
+    resolution: {integrity: sha512-H5Ixkd2OuSIgHtxuHLTt7aJYfhMXKXT/rK32HPD/kSrOB6q6ooeiWAXkBy7L8F3ZxdkBb9ini9zP9UwnEFzWgQ==}
 
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
@@ -3836,6 +3866,38 @@ snapshots:
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
     optionalDependencies:
       '@types/react': 19.1.17
+
+  '@react-spring/animated@10.0.3(react@19.1.0)':
+    dependencies:
+      '@react-spring/shared': 10.0.3(react@19.1.0)
+      '@react-spring/types': 10.0.3
+      react: 19.1.0
+
+  '@react-spring/core@10.0.3(react@19.1.0)':
+    dependencies:
+      '@react-spring/animated': 10.0.3(react@19.1.0)
+      '@react-spring/shared': 10.0.3(react@19.1.0)
+      '@react-spring/types': 10.0.3
+      react: 19.1.0
+
+  '@react-spring/native@10.0.3(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@react-spring/animated': 10.0.3(react@19.1.0)
+      '@react-spring/core': 10.0.3(react@19.1.0)
+      '@react-spring/shared': 10.0.3(react@19.1.0)
+      '@react-spring/types': 10.0.3
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
+
+  '@react-spring/rafz@10.0.3': {}
+
+  '@react-spring/shared@10.0.3(react@19.1.0)':
+    dependencies:
+      '@react-spring/rafz': 10.0.3
+      '@react-spring/types': 10.0.3
+      react: 19.1.0
+
+  '@react-spring/types@10.0.3': {}
 
   '@sinclair/typebox@0.27.8': {}
 

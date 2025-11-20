@@ -9,14 +9,17 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.telephony.SmsManager
-import android.util.Log
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import org.json.JSONArray
 import org.json.JSONObject
 
+/**
+ * Expo module for managing SMS operations: listing, sending, and deleting SMS messages.
+ */
 class ExpoSmsManagerModule : Module() {
   private val context: Context
     get() = appContext.reactContext ?: throw IllegalStateException("React context is null")
@@ -120,27 +123,40 @@ class ExpoSmsManagerModule : Module() {
           PendingIntent.FLAG_IMMUTABLE
         )
 
-        context.registerReceiver(object : BroadcastReceiver() {
+        val sentReceiver = object : BroadcastReceiver() {
           override fun onReceive(context: Context, intent: Intent) {
             when (resultCode) {
-              Activity.RESULT_OK -> promise.resolve("SMS sent")
+              Activity.RESULT_OK -> promise.resolve("SMS sent successfully")
               SmsManager.RESULT_ERROR_GENERIC_FAILURE -> promise.reject("SMS_ERROR", "Generic failure", null)
               SmsManager.RESULT_ERROR_NO_SERVICE -> promise.reject("SMS_ERROR", "No service", null)
               SmsManager.RESULT_ERROR_NULL_PDU -> promise.reject("SMS_ERROR", "Null PDU", null)
               SmsManager.RESULT_ERROR_RADIO_OFF -> promise.reject("SMS_ERROR", "Radio off", null)
             }
-            context.unregisterReceiver(this)
+            try {
+              context.unregisterReceiver(this)
+            } catch (e: Exception) {
+              // Receiver might already be unregistered
+            }
           }
-        }, IntentFilter(SENT))
+        }
 
-        val smsManager = SmsManager.getDefault()
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+          context.registerReceiver(sentReceiver, IntentFilter(SENT), Context.RECEIVER_NOT_EXPORTED)
+        } else {
+          context.registerReceiver(sentReceiver, IntentFilter(SENT))
+        }
+
+        // Use context-based SmsManager (getDefault() is deprecated)
+        val smsManager = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+          context.getSystemService(SmsManager::class.java)
+        } else {
+          @Suppress("DEPRECATION")
+          SmsManager.getDefault()
+        }
+
         val parts = smsManager.divideMessage(message)
-        val sentPendingIntents = ArrayList<PendingIntent>(parts.size)
-        val deliveredPendingIntents = ArrayList<PendingIntent>(parts.size)
-
-        for (i in parts.indices) {
-          sentPendingIntents.add(sentPI)
-          deliveredPendingIntents.add(deliveredPI)
+        val sentPendingIntents = ArrayList<PendingIntent>(parts.size).apply {
+          repeat(parts.size) { add(sentPI) }
         }
 
         smsManager.sendMultipartTextMessage(
@@ -148,7 +164,7 @@ class ExpoSmsManagerModule : Module() {
           null,
           parts,
           sentPendingIntents,
-          deliveredPendingIntents
+          null // No delivery confirmation needed
         )
 
         val values = ContentValues().apply {

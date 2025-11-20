@@ -63,6 +63,5 @@ buck-out/
 /ios/Pods/
 /vendor/bundle/
 
-# generated native folders
-/ios
-/android
+android/gradle.properties
+android/**/*.keystore

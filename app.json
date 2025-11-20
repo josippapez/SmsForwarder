@@ -2,12 +2,12 @@
   "expo": {
     "name": "SMS Forwarder",
     "slug": "sms-forwarder",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "smsforwarder",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
@@ -26,7 +26,10 @@
         "android.permission.READ_CONTACTS",
         "android.permission.READ_PHONE_NUMBERS",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.WAKE_LOCK"
+        "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+        "android.permission.WAKE_LOCK",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.WRITE_CONTACTS"
       ]
     },
     "plugins": [
@@ -47,6 +50,9 @@
           "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts."
         }
       ]
-    ]
+    ],
+    "ios": {
+      "bundleIdentifier": "com.smsforwarder"
+    }
   }
 }

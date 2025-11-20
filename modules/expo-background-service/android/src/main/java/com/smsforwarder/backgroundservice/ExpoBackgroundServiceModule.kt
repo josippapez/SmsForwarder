@@ -17,15 +17,13 @@ class ExpoBackgroundServiceModule : Module() {
     Function("startService") {
       currentServiceIntent?.let { context.stopService(it) }
 
-      val bundle = Bundle().apply {
-        putString("foo", "bar")
-      }
+      currentServiceIntent = Intent(context, BackgroundService::class.java)
 
-      currentServiceIntent = Intent(context, BackgroundService::class.java).apply {
-        putExtras(bundle)
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        context.startForegroundService(currentServiceIntent)
+      } else {
+        context.startService(currentServiceIntent)
       }
-
-      context.startService(currentServiceIntent)
     }
 
     Function("stopService") {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from "react";
 import {
   Animated,
   Modal,
@@ -6,21 +6,28 @@ import {
   Switch,
   TouchableWithoutFeedback,
   View,
-} from 'react-native';
-import {fadeIn} from '../Animations';
-import {Section} from '../App';
+} from "react-native";
+import { fadeIn } from "../animations/Animations";
+import { Section } from "./Shared";
 
-type Props = {
+type Props = Readonly<{
   isDarkMode: boolean;
   enabled: boolean;
   visible: boolean;
   setVisible: (visible: boolean) => void;
   toggleSwitch: () => void;
-};
+}>;
 
 function ToggleModal(props: Props) {
-  const {enabled, toggleSwitch, visible, setVisible, isDarkMode} = props;
-  var animation = new Animated.Value(0);
+  const { enabled, toggleSwitch, visible, setVisible, isDarkMode } = props;
+  const animation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      animation.setValue(0);
+      fadeIn(animation, 0.5, 250, false);
+    }
+  }, [visible, animation]);
 
   return (
     <Modal
@@ -31,44 +38,45 @@ function ToggleModal(props: Props) {
         setVisible(false);
       }}
       animationType="slide"
-      onShow={() => {
-        fadeIn(animation, 0.5, 250, false);
-      }}>
+    >
       <TouchableWithoutFeedback
         onPress={() => {
           setVisible(false);
-        }}>
+        }}
+      >
         <Animated.View
           style={{
             flex: 1,
             opacity: animation,
-            backgroundColor: isDarkMode ? 'black' : '#4d4d4d',
+            backgroundColor: isDarkMode ? "black" : "#4d4d4d",
           }}
         />
       </TouchableWithoutFeedback>
       <View
         style={{
-          position: 'absolute',
-          width: '100%',
-          height: '30%',
+          position: "absolute",
+          width: "100%",
+          height: "30%",
           bottom: 0,
-          backgroundColor: isDarkMode ? '#5e5e5e' : 'white',
+          backgroundColor: isDarkMode ? "#5e5e5e" : "white",
           borderRadius: 20,
           elevation: 20,
-        }}>
+        }}
+      >
         <View
           style={{
             flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Section title={enabled ? 'Running' : 'Stopped'} boldedTitle />
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Section title={enabled ? "Running" : "Stopped"} boldedTitle />
           <Switch
             trackColor={{
-              false: '#767577',
-              true: '#81b0ff',
+              false: "#767577",
+              true: "#81b0ff",
             }}
-            thumbColor={enabled ? '#cccccc' : '#f4f3f4'}
+            thumbColor={enabled ? "#cccccc" : "#f4f3f4"}
             ios_backgroundColor="#3e3e3e"
             onValueChange={toggleSwitch}
             value={enabled}
@@ -83,11 +91,11 @@ export default ToggleModal;
 
 const styles = StyleSheet.create({
   content: {
-    height: '50%',
-    backgroundColor: 'white',
+    height: "50%",
+    backgroundColor: "white",
     padding: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderTopRightRadius: 17,
     borderTopLeftRadius: 17,
   },
@@ -98,6 +106,6 @@ const styles = StyleSheet.create({
   contentView: {
     margin: 0,
     height: 100,
-    backgroundColor: 'black',
+    backgroundColor: "black",
   },
 });

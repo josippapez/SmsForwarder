@@ -1,28 +1,13 @@
-import { atomWithStorage, createJSONStorage } from 'jotai/utils';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { atom } from "jotai";
 
-const storage = createJSONStorage<any>(() => AsyncStorage);
+// Using regular atoms to avoid Suspense issues with atomWithStorage
+// Persistence can be added later using atom effects or custom hooks if needed
+export const includesAtom = atom<{ id: string; text: string }[]>([
+  { id: "1", text: "" },
+]);
 
-export const includesAtom = atomWithStorage<{id: string; text: string}[]>(
-  'includes',
-  [{id: '1', text: ''}],
-  storage
-);
+export const phoneNumberAtom = atom<string>("");
 
-export const phoneNumberAtom = atomWithStorage<string>(
-  'phoneNumber',
-  '',
-  storage
-);
+export const bodyAtom = atom<string>("");
 
-export const bodyAtom = atomWithStorage<string>(
-  'body',
-  '',
-  storage
-);
-
-export const readPermissionsPolicyAtom = atomWithStorage<boolean>(
-  'readPermissionsPolicy',
-  false,
-  storage
-);
+export const readPermissionsPolicyAtom = atom<boolean>(false);

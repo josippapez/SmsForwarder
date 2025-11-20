@@ -4,12 +4,16 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "build:apk": "cd android && ./gradlew assembleRelease && cd ..",
+    "build:aab": "cd android && ./gradlew bundleRelease && cd ..",
+    "clean:android": "cd android && ./gradlew clean && cd .."
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-spring/native": "^10.0.3",
     "expo": "~54.0.24",
     "expo-build-properties": "^1.0.9",
     "expo-contacts": "^15.0.10",

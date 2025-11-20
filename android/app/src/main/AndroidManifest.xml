@@ -1,0 +1,60 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Required for foreground service -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+  <!-- Required for notifications on Android 13+ -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+  <!-- Required for SMS forwarding functionality -->
+  <uses-permission android:name="android.permission.READ_SMS" />
+  <uses-permission android:name="android.permission.RECEIVE_SMS" />
+  <uses-permission android:name="android.permission.SEND_SMS" />
+
+  <!-- Required for contact picker -->
+  <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+  <!-- Required for Expo -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.VIEW" />
+      <category android:name="android.intent.category.BROWSABLE" />
+      <data android:scheme="https" />
+    </intent>
+  </queries>
+  <application android:name=".MainApplication" android:label="@string/app_name"
+    android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"
+    android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true"
+    android:enableOnBackInvokedCallback="false">
+    <meta-data android:name="expo.modules.updates.ENABLED" android:value="false" />
+    <meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH"
+      android:value="ALWAYS" />
+    <meta-data android:name="expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS" android:value="0" />
+    <activity android:name=".MainActivity"
+      android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode"
+      android:launchMode="singleTask" android:windowSoftInputMode="adjustPan"
+      android:theme="@style/Theme.App.SplashScreen" android:exported="true"
+      android:screenOrientation="portrait">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="smsforwarder" />
+        <data android:scheme="exp+sms-forwarder" />
+      </intent-filter>
+    </activity>
+    <service android:name="com.smsforwarder.backgroundservice.BackgroundService"
+      android:exported="false" android:foregroundServiceType="dataSync" />
+    <receiver android:name="com.smsforwarder.smslistener.SmsReceiver" android:exported="true"
+      android:permission="android.permission.BROADCAST_SMS">
+      <intent-filter android:priority="2147483647">
+        <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>

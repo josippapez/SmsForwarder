@@ -20,9 +20,12 @@ class BackgroundService : Service() {
 
   override fun onBind(intent: Intent?): IBinder? = null
 
-  override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+  override fun onCreate() {
+    super.onCreate()
     createNotificationChannel()
+  }
 
+  override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     val notification = buildNotification()
     startForeground(SERVICE_NOTIFICATION_ID, notification)
 
@@ -32,8 +35,12 @@ class BackgroundService : Service() {
   private fun createNotificationChannel() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val importance = NotificationManager.IMPORTANCE_DEFAULT
-      val channel = NotificationChannel(CHANNEL_ID, "Messaging", importance).apply {
-        description = "Used for running app in background"
+      val channel = NotificationChannel(CHANNEL_ID, "SMS Forwarder Service", importance).apply {
+        description = "Keeps SMS forwarding service running in background"
+        setShowBadge(true)
+        lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        enableLights(false)
+        enableVibration(false)
       }
       val notificationManager = getSystemService(NotificationManager::class.java)
       notificationManager?.createNotificationChannel(channel)
@@ -41,7 +48,6 @@ class BackgroundService : Service() {
   }
 
   private fun buildNotification(): Notification {
-    // Get the main activity class name from package
     val packageManager = packageManager
     val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
 
@@ -53,17 +59,35 @@ class BackgroundService : Service() {
       PendingIntent.FLAG_IMMUTABLE
     )
 
+    val iconResId = resources.getIdentifier("ic_notification", "drawable", packageName)
+    val notificationIcon = if (iconResId != 0) iconResId else android.R.drawable.stat_notify_chat
+
     return NotificationCompat.Builder(this, CHANNEL_ID)
-      .setContentTitle("SMS Forwarder Running")
-      .setContentText("Checking messages in background")
-      .setSmallIcon(android.R.drawable.ic_dialog_info)
+      .setContentTitle("SMS Forwarder Active")
+      .setContentText("Tap to open app • Monitoring messages")
+      .setSmallIcon(notificationIcon)
+      .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+      .setCategory(NotificationCompat.CATEGORY_SERVICE)
       .setContentIntent(contentIntent)
       .setOngoing(true)
+      .setShowWhen(true)
+      .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+      .setAutoCancel(false)
       .build()
+  }
+
+  override fun onTaskRemoved(rootIntent: Intent?) {
+    super.onTaskRemoved(rootIntent)
+    // Service will restart due to START_STICKY
   }
 
   override fun onDestroy() {
     super.onDestroy()
-    stopForeground(true)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      stopForeground(STOP_FOREGROUND_REMOVE)
+    } else {
+      @Suppress("DEPRECATION")
+      stopForeground(true)
+    }
   }
 }

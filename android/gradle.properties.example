@@ -1,0 +1,8 @@
+# Example gradle.properties file for release signing
+# Copy this file to gradle.properties and fill in your keystore details
+# DO NOT commit gradle.properties to version control!
+
+MYAPP_UPLOAD_STORE_FILE=my-upload-key.keystore
+MYAPP_UPLOAD_KEY_ALIAS=my-key-alias
+MYAPP_UPLOAD_STORE_PASSWORD=*****
+MYAPP_UPLOAD_KEY_PASSWORD=*****
