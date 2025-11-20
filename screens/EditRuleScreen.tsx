@@ -15,6 +15,7 @@ import {
   KeywordInputSection,
   CustomMessageSection,
 } from "../Components/Sections";
+import { useContactSelector } from "../hooks";
 import { createRule, updateRule, getRule } from "../utils/database";
 
 interface EditRuleScreenProps {
@@ -38,10 +39,15 @@ const EditRuleScreen: React.FC<EditRuleScreenProps> = ({
   const [keywordItems, setKeywordItems] = useState<
     Array<{ id: string; text: string }>
   >([]);
-  const [targetNumbers, setTargetNumbers] = useState<string[]>([]);
+  const [targetNumbers, setTargetNumbers] = useState<
+    Array<{ id: string; number: string }>
+  >([]);
   const [customMessage, setCustomMessage] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [stopOnMatch, setStopOnMatch] = useState(false);
+
+  const { selectPhoneNumber, isLoading: isLoadingContact } =
+    useContactSelector();
 
   // Load existing rule if in edit mode
   useEffect(() => {
@@ -68,7 +74,12 @@ const EditRuleScreen: React.FC<EditRuleScreenProps> = ({
           text: keyword,
         }))
       );
-      setTargetNumbers(rule.targetNumbers);
+      setTargetNumbers(
+        rule.targetNumbers.map((num, idx) => ({
+          id: `${Date.now()}-${idx}`,
+          number: num,
+        }))
+      );
       setCustomMessage(rule.customMessage || "");
       setEnabled(rule.enabled);
       setStopOnMatch(rule.stopOnMatch);
@@ -101,13 +112,15 @@ const EditRuleScreen: React.FC<EditRuleScreenProps> = ({
     // Validate phone numbers
     const phoneRegex = /^\+?[\d\s\-()]+$/;
     const invalidNumbers = targetNumbers.filter(
-      num => !phoneRegex.test(num.trim())
+      item => !phoneRegex.test(item.number.trim())
     );
 
     if (invalidNumbers.length > 0) {
       Alert.alert(
         "Validation Error",
-        `Invalid phone number format: ${invalidNumbers.join(", ")}`
+        `Invalid phone number format: ${invalidNumbers
+          .map(n => n.number)
+          .join(", ")}`
       );
       return false;
     }
@@ -118,6 +131,35 @@ const EditRuleScreen: React.FC<EditRuleScreenProps> = ({
   const getSaveButtonTitle = () => {
     if (saving) return "Saving...";
     return isEditMode ? "Update Rule" : "Create Rule";
+  };
+
+  const handleSelectContact = async () => {
+    const phone = await selectPhoneNumber();
+    if (phone) {
+      setTargetNumbers([
+        ...targetNumbers,
+        { id: Date.now().toString(), number: phone },
+      ]);
+    }
+  };
+
+  const handleAddNumber = () => {
+    setTargetNumbers([
+      ...targetNumbers,
+      { id: Date.now().toString(), number: "" },
+    ]);
+  };
+
+  const handleUpdateNumber = (id: string, value: string) => {
+    setTargetNumbers(
+      targetNumbers.map(item =>
+        item.id === id ? { ...item, number: value } : item
+      )
+    );
+  };
+
+  const handleRemoveNumber = (id: string) => {
+    setTargetNumbers(targetNumbers.filter(item => item.id !== id));
   };
 
   const handleSave = async () => {
@@ -134,7 +176,9 @@ const EditRuleScreen: React.FC<EditRuleScreenProps> = ({
       const ruleData = {
         name: ruleName.trim(),
         keywords,
-        targetNumbers: targetNumbers.map(n => n.trim()).filter(Boolean),
+        targetNumbers: targetNumbers
+          .map(item => item.number.trim())
+          .filter(Boolean),
         customMessage: customMessage.trim() || undefined,
         enabled,
         stopOnMatch,
@@ -225,33 +269,35 @@ const EditRuleScreen: React.FC<EditRuleScreenProps> = ({
           >
             SMS will be forwarded to these numbers
           </Section>
-          {targetNumbers.map((number, index) => (
-            <View key={`${number}-${index}`} style={styles.inputRow}>
+          {targetNumbers.map(item => (
+            <View key={item.id} style={styles.inputRow}>
               <CustomTextInput
                 style={styles.inputFlex}
-                value={number}
-                onChangeText={text => {
-                  const updated = [...targetNumbers];
-                  updated[index] = text;
-                  setTargetNumbers(updated);
-                }}
+                value={item.number}
+                onChangeText={text => handleUpdateNumber(item.id, text)}
                 placeholder="Enter phone number..."
               />
               <CustomButton
-                cb={() => {
-                  setTargetNumbers(targetNumbers.filter((_, i) => i !== index));
-                }}
+                cb={() => handleRemoveNumber(item.id)}
                 buttonStyle={styles.removeButton}
                 title="✕"
               />
             </View>
           ))}
           {targetNumbers.length < 5 && !saving && (
-            <CustomButton
-              title="+ Add Number"
-              cb={() => setTargetNumbers([...targetNumbers, ""])}
-              buttonStyle={styles.addButton}
-            />
+            <>
+              <CustomButton
+                title="+ Add Number Manually"
+                cb={handleAddNumber}
+                buttonStyle={styles.addButton}
+              />
+              <Section title="OR" boldedTitle sectionStyle={styles.divider} />
+              <CustomButton
+                title={isLoadingContact ? "Loading..." : "Select from Contacts"}
+                cb={handleSelectContact}
+                buttonStyle={styles.addButton}
+              />
+            </>
           )}
         </View>
 
@@ -433,6 +479,10 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginTop: 20,
+  },
+  divider: {
+    marginTop: 20,
+    marginBottom: 10,
   },
 });
 
