@@ -2,6 +2,18 @@ import * as SQLite from "expo-sqlite";
 import { Paths, File } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
+export interface ForwardingRule {
+  id: number;
+  name: string;
+  keywords: string[]; // JSON array stored as string
+  targetNumbers: string[]; // JSON array stored as string
+  customMessage?: string;
+  enabled: boolean;
+  stopOnMatch: boolean; // If true, stop checking other rules after this one matches
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface ForwardedMessage {
   id: number;
   originalSender: string;
@@ -9,6 +21,8 @@ export interface ForwardedMessage {
   messageBody: string;
   customMessage?: string;
   keywordMatched: string;
+  ruleId?: number; // Which rule triggered this forward
+  ruleName?: string; // Rule name for easy reference
   status: "success" | "failed";
   timestamp: number;
   errorMessage?: string;
@@ -21,6 +35,7 @@ export interface MessageFilter {
   status?: "success" | "failed";
   keyword?: string;
   searchText?: string;
+  ruleId?: number;
 }
 
 let database: SQLite.SQLiteDatabase | null = null;
@@ -47,7 +62,20 @@ export const initDatabase = async (): Promise<void> => {
     try {
       database = await SQLite.openDatabaseAsync("sms_forwarder.db");
 
+      // Create tables
       await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS forwarding_rules (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          keywords TEXT NOT NULL,
+          target_numbers TEXT NOT NULL,
+          custom_message TEXT,
+          enabled INTEGER NOT NULL DEFAULT 1,
+          stop_on_match INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS forwarded_messages (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           original_sender TEXT NOT NULL,
@@ -59,10 +87,39 @@ export const initDatabase = async (): Promise<void> => {
           timestamp INTEGER NOT NULL,
           error_message TEXT
         );
+      `);
 
+      // Check if rule_id and rule_name columns exist, add them if not (migration)
+      try {
+        const tableInfo = await database.getAllAsync<any>(
+          "PRAGMA table_info(forwarded_messages)"
+        );
+        const columnNames = new Set(tableInfo.map((col: any) => col.name));
+
+        if (!columnNames.has("rule_id")) {
+          console.log("Adding rule_id column to forwarded_messages table");
+          await database.execAsync(
+            "ALTER TABLE forwarded_messages ADD COLUMN rule_id INTEGER"
+          );
+        }
+
+        if (!columnNames.has("rule_name")) {
+          console.log("Adding rule_name column to forwarded_messages table");
+          await database.execAsync(
+            "ALTER TABLE forwarded_messages ADD COLUMN rule_name TEXT"
+          );
+        }
+      } catch (migrationError) {
+        console.error("Migration error:", migrationError);
+      }
+
+      // Create indexes
+      await database.execAsync(`
         CREATE INDEX IF NOT EXISTS idx_timestamp ON forwarded_messages(timestamp DESC);
         CREATE INDEX IF NOT EXISTS idx_status ON forwarded_messages(status);
         CREATE INDEX IF NOT EXISTS idx_sender ON forwarded_messages(original_sender);
+        CREATE INDEX IF NOT EXISTS idx_rule ON forwarded_messages(rule_id);
+        CREATE INDEX IF NOT EXISTS idx_rule_enabled ON forwarding_rules(enabled);
       `);
 
       console.log("Database initialized successfully");
@@ -91,13 +148,15 @@ export const insertForwardedMessage = async (
   try {
     const result = await database!.runAsync(
       `INSERT INTO forwarded_messages
-       (original_sender, recipient, message_body, custom_message, keyword_matched, status, timestamp, error_message)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (original_sender, recipient, message_body, custom_message, keyword_matched, rule_id, rule_name, status, timestamp, error_message)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       message.originalSender,
       message.recipient,
       message.messageBody,
       message.customMessage || null,
       message.keywordMatched,
+      message.ruleId || null,
+      message.ruleName || null,
       message.status,
       message.timestamp,
       message.errorMessage || null
@@ -110,7 +169,6 @@ export const insertForwardedMessage = async (
     throw error;
   }
 };
-
 /**
  * Get forwarded messages with optional filtering
  */
@@ -385,6 +443,223 @@ export const exportToCSV = async (filter?: MessageFilter): Promise<void> => {
     console.error("Failed to export CSV:", error);
     throw error;
   }
+};
+
+// ============================================================================
+// FORWARDING RULES CRUD OPERATIONS
+// ============================================================================
+
+/**
+ * Create a new forwarding rule
+ */
+export const createRule = async (
+  rule: Omit<ForwardingRule, "id" | "createdAt" | "updatedAt">
+): Promise<number> => {
+  if (!database) {
+    await initDatabase();
+  }
+
+  const now = Date.now();
+
+  try {
+    const result = await database!.runAsync(
+      `INSERT INTO forwarding_rules
+       (name, keywords, target_numbers, custom_message, enabled, stop_on_match, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      rule.name,
+      JSON.stringify(rule.keywords),
+      JSON.stringify(rule.targetNumbers),
+      rule.customMessage || null,
+      rule.enabled ? 1 : 0,
+      rule.stopOnMatch ? 1 : 0,
+      now,
+      now
+    );
+
+    console.log("Rule created with ID:", result.lastInsertRowId);
+    return result.lastInsertRowId;
+  } catch (error) {
+    console.error("Failed to create rule:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get all forwarding rules
+ */
+export const getAllRules = async (): Promise<ForwardingRule[]> => {
+  if (!database) {
+    await initDatabase();
+  }
+
+  try {
+    const rows = await database!.getAllAsync<any>(
+      "SELECT * FROM forwarding_rules ORDER BY created_at DESC"
+    );
+
+    return rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      keywords: JSON.parse(row.keywords),
+      targetNumbers: JSON.parse(row.target_numbers),
+      customMessage: row.custom_message,
+      enabled: row.enabled === 1,
+      stopOnMatch: row.stop_on_match === 1,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  } catch (error) {
+    console.error("Failed to get rules:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get enabled forwarding rules only
+ */
+export const getEnabledRules = async (): Promise<ForwardingRule[]> => {
+  if (!database) {
+    await initDatabase();
+  }
+
+  try {
+    const rows = await database!.getAllAsync<any>(
+      "SELECT * FROM forwarding_rules WHERE enabled = 1 ORDER BY created_at ASC"
+    );
+
+    return rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      keywords: JSON.parse(row.keywords),
+      targetNumbers: JSON.parse(row.target_numbers),
+      customMessage: row.custom_message,
+      enabled: row.enabled === 1,
+      stopOnMatch: row.stop_on_match === 1,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  } catch (error) {
+    console.error("Failed to get enabled rules:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get a single rule by ID
+ */
+export const getRule = async (id: number): Promise<ForwardingRule | null> => {
+  if (!database) {
+    await initDatabase();
+  }
+
+  try {
+    const row = await database!.getFirstAsync<any>(
+      "SELECT * FROM forwarding_rules WHERE id = ?",
+      id
+    );
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      name: row.name,
+      keywords: JSON.parse(row.keywords),
+      targetNumbers: JSON.parse(row.target_numbers),
+      customMessage: row.custom_message,
+      enabled: row.enabled === 1,
+      stopOnMatch: row.stop_on_match === 1,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  } catch (error) {
+    console.error("Failed to get rule:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update an existing rule
+ */
+export const updateRule = async (
+  id: number,
+  rule: Partial<Omit<ForwardingRule, "id" | "createdAt" | "updatedAt">>
+): Promise<void> => {
+  if (!database) {
+    await initDatabase();
+  }
+
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (rule.name !== undefined) {
+    updates.push("name = ?");
+    values.push(rule.name);
+  }
+  if (rule.keywords !== undefined) {
+    updates.push("keywords = ?");
+    values.push(JSON.stringify(rule.keywords));
+  }
+  if (rule.targetNumbers !== undefined) {
+    updates.push("target_numbers = ?");
+    values.push(JSON.stringify(rule.targetNumbers));
+  }
+  if (rule.customMessage !== undefined) {
+    updates.push("custom_message = ?");
+    values.push(rule.customMessage || null);
+  }
+  if (rule.enabled !== undefined) {
+    updates.push("enabled = ?");
+    values.push(rule.enabled ? 1 : 0);
+  }
+  if (rule.stopOnMatch !== undefined) {
+    updates.push("stop_on_match = ?");
+    values.push(rule.stopOnMatch ? 1 : 0);
+  }
+
+  updates.push("updated_at = ?");
+  values.push(Date.now());
+
+  values.push(id);
+
+  try {
+    await database!.runAsync(
+      `UPDATE forwarding_rules SET ${updates.join(", ")} WHERE id = ?`,
+      ...values
+    );
+    console.log("Rule updated:", id);
+  } catch (error) {
+    console.error("Failed to update rule:", error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a rule
+ */
+export const deleteRule = async (id: number): Promise<void> => {
+  if (!database) {
+    await initDatabase();
+  }
+
+  try {
+    await database!.runAsync("DELETE FROM forwarding_rules WHERE id = ?", id);
+    console.log("Rule deleted:", id);
+  } catch (error) {
+    console.error("Failed to delete rule:", error);
+    throw error;
+  }
+};
+
+/**
+ * Toggle rule enabled status
+ */
+export const toggleRuleEnabled = async (
+  id: number,
+  enabled: boolean
+): Promise<void> => {
+  await updateRule(id, { enabled });
 };
 
 /**

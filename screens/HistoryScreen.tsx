@@ -239,6 +239,11 @@ const HistoryScreen: React.FC<HistoryScreenProps> = () => {
           <Text style={[styles.footerText, { color: textColor }]}>
             Keyword: {item.keywordMatched}
           </Text>
+          {item.ruleName && (
+            <Text style={[styles.footerText, { color: textColor }]}>
+              Rule: {item.ruleName}
+            </Text>
+          )}
         </View>
 
         {item.errorMessage && (
@@ -295,11 +300,13 @@ const HistoryScreen: React.FC<HistoryScreenProps> = () => {
       <Section
         boldedTitle
         title="Message History"
-        sectionStyle={styles.header}
+        sectionStyle={{
+          paddingVertical: 20,
+        }}
       />
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      <View>
         <TextInput
           style={[
             styles.searchInput,
@@ -407,15 +414,8 @@ const HistoryScreen: React.FC<HistoryScreenProps> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 20,
   },
   searchInput: {
     borderRadius: 12,
@@ -425,14 +425,12 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     flexDirection: "row",
-    paddingHorizontal: 20,
     paddingVertical: 10,
     gap: 10,
   },
   filterButton: {
     flex: 1,
     paddingVertical: 10,
-    paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: "center",
   },
@@ -448,7 +446,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   statsContainer: {
-    paddingHorizontal: 20,
     paddingVertical: 10,
   },
   statsText: {
@@ -456,7 +453,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   listContent: {
-    paddingHorizontal: 20,
     paddingBottom: 80,
     flexGrow: 1,
   },
@@ -566,7 +562,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     gap: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
   },
   actionButton: {
     flex: 1,

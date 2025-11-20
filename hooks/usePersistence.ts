@@ -6,6 +6,7 @@ import {
   phoneNumberAtom,
   bodyAtom,
   readPermissionsPolicyAtom,
+  advancedModeAtom,
 } from "../store/atoms";
 
 /**
@@ -19,6 +20,7 @@ export const usePersistence = () => {
   const [readPermissionsPolicy, setReadPermissionsPolicy] = useAtom(
     readPermissionsPolicyAtom
   );
+  const [advancedMode, setAdvancedMode] = useAtom(advancedModeAtom);
 
   // Load initial values from AsyncStorage
   useEffect(() => {
@@ -30,6 +32,7 @@ export const usePersistence = () => {
         const storedReadPolicy = await AsyncStorage.getItem(
           "readPermissionsPolicy"
         );
+        const storedAdvancedMode = await AsyncStorage.getItem("advancedMode");
 
         if (storedIncludes) {
           setIncludes(JSON.parse(storedIncludes));
@@ -42,6 +45,9 @@ export const usePersistence = () => {
         }
         if (storedReadPolicy) {
           setReadPermissionsPolicy(JSON.parse(storedReadPolicy));
+        }
+        if (storedAdvancedMode) {
+          setAdvancedMode(JSON.parse(storedAdvancedMode));
         }
       } catch (error) {
         console.error("Error loading persisted data:", error);
@@ -70,4 +76,8 @@ export const usePersistence = () => {
       JSON.stringify(readPermissionsPolicy)
     );
   }, [readPermissionsPolicy]);
+
+  useEffect(() => {
+    AsyncStorage.setItem("advancedMode", JSON.stringify(advancedMode));
+  }, [advancedMode]);
 };

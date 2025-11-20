@@ -11,3 +11,5 @@ export const phoneNumberAtom = atom<string>("");
 export const bodyAtom = atom<string>("");
 
 export const readPermissionsPolicyAtom = atom<boolean>(false);
+
+export const advancedModeAtom = atom<boolean>(false);

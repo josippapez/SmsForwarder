@@ -4,24 +4,31 @@ import * as ExpoBackgroundService from "../modules/expo-background-service";
 import * as ExpoSmsListener from "../modules/expo-sms-listener";
 import * as ExpoSmsManager from "../modules/expo-sms-manager";
 import type { SmsMessage } from "../types";
-import { initDatabase, insertForwardedMessage } from "../utils/database";
+import {
+  initDatabase,
+  insertForwardedMessage,
+  getEnabledRules,
+} from "../utils/database";
 
 interface UseSmsForwarderProps {
   enabled: boolean;
-  includeKeywords: string[];
-  targetPhoneNumber: string;
-  customMessage: string;
+  advancedMode?: boolean;
+  simpleKeywords?: string[];
+  simpleTargetNumber?: string;
+  simpleCustomMessage?: string;
 }
 
 /**
  * Custom hook to manage SMS forwarding functionality
  * Handles background service, SMS listening, and message forwarding
+ * Supports both simple mode (single rule) and advanced mode (multiple rules)
  */
 export const useSmsForwarder = ({
   enabled,
-  includeKeywords,
-  targetPhoneNumber,
-  customMessage,
+  advancedMode = false,
+  simpleKeywords = [],
+  simpleTargetNumber = "",
+  simpleCustomMessage = "",
 }: UseSmsForwarderProps) => {
   useEffect(() => {
     let subscription: any;
@@ -65,12 +72,26 @@ export const useSmsForwarder = ({
     const handleSmsReceived = async (message: SmsMessage) => {
       console.log("SMS received:", message);
 
-      const matchedKeyword = includeKeywords.find(keyword =>
+      try {
+        if (advancedMode) {
+          // Advanced Mode: Use multiple rules from database
+          await handleAdvancedMode(message);
+        } else {
+          // Simple Mode: Use keywords and single target number
+          await handleSimpleMode(message);
+        }
+      } catch (error) {
+        console.error("Error processing SMS:", error);
+      }
+    };
+
+    const handleSimpleMode = async (message: SmsMessage) => {
+      const matchedKeyword = simpleKeywords.find(keyword =>
         message.body.includes(keyword)
       );
 
-      if (!matchedKeyword || !targetPhoneNumber) {
-        console.log("No keyword match or no target number");
+      if (!matchedKeyword || !simpleTargetNumber) {
+        console.log("No keyword match or no target number (simple mode)");
         return;
       }
 
@@ -78,16 +99,15 @@ export const useSmsForwarder = ({
         "Keyword matched:",
         matchedKeyword,
         "Forwarding to:",
-        targetPhoneNumber
+        simpleTargetNumber
       );
 
-      const messageToSend = customMessage || message.body;
+      const messageToSend = simpleCustomMessage || message.body;
       const timestamp = Date.now();
 
       try {
-        console.log("Attempting to send SMS...");
         const sendResult = await Promise.race([
-          ExpoSmsManager.send(targetPhoneNumber, messageToSend),
+          ExpoSmsManager.send(simpleTargetNumber, messageToSend),
           new Promise((_, reject) =>
             setTimeout(
               () =>
@@ -98,40 +118,134 @@ export const useSmsForwarder = ({
             )
           ),
         ]);
-        console.log("SMS forwarded successfully, result:", sendResult);
+        console.log("SMS forwarded successfully:", sendResult);
 
-        // Log successful forward to database
-        console.log("Inserting into database...");
-        const insertId = await insertForwardedMessage({
+        await insertForwardedMessage({
           originalSender: message.originatingAddress || "Unknown",
-          recipient: targetPhoneNumber,
+          recipient: simpleTargetNumber,
           messageBody: message.body,
-          customMessage: customMessage || undefined,
+          customMessage: simpleCustomMessage || undefined,
           keywordMatched: matchedKeyword,
           status: "success",
           timestamp,
         });
-        console.log("Logged to database with ID:", insertId);
       } catch (error: any) {
         console.error("Failed to forward SMS:", error);
+        await insertForwardedMessage({
+          originalSender: message.originatingAddress || "Unknown",
+          recipient: simpleTargetNumber,
+          messageBody: message.body,
+          customMessage: simpleCustomMessage || undefined,
+          keywordMatched: matchedKeyword,
+          status: "failed",
+          timestamp,
+          errorMessage: error?.message || "Unknown error",
+        });
+      }
+    };
 
-        // Log failed forward to database
-        try {
-          console.log("Inserting error into database...");
-          const insertId = await insertForwardedMessage({
-            originalSender: message.originatingAddress || "Unknown",
-            recipient: targetPhoneNumber,
-            messageBody: message.body,
-            customMessage: customMessage || undefined,
-            keywordMatched: matchedKeyword,
-            status: "failed",
-            timestamp,
-            errorMessage: error?.message || "Unknown error",
-          });
-          console.log("Logged error to database with ID:", insertId);
-        } catch (dbError) {
-          console.error("Failed to log to database:", dbError);
+    const handleAdvancedMode = async (message: SmsMessage) => {
+      const rules = await getEnabledRules();
+
+      if (rules.length === 0) {
+        console.log("No enabled rules found");
+        return;
+      }
+
+      console.log(`Checking ${rules.length} enabled rules`);
+
+      // Collect all forwarding tasks to run in parallel
+      const forwardingTasks: Promise<void>[] = [];
+
+      for (const rule of rules) {
+        console.log(`Checking rule: ${rule.name}`);
+
+        const matchedKeyword = rule.keywords.find(keyword =>
+          message.body.includes(keyword)
+        );
+
+        if (!matchedKeyword) {
+          console.log(`No keyword match for rule: ${rule.name}`);
+          continue;
         }
+
+        console.log(
+          `Keyword "${matchedKeyword}" matched in rule: ${rule.name}`
+        );
+
+        // Create forwarding tasks for all target numbers (non-blocking)
+        for (const targetNumber of rule.targetNumbers) {
+          const task = (async () => {
+            const messageToSend = rule.customMessage || message.body;
+            const timestamp = Date.now();
+
+            try {
+              console.log(
+                `Forwarding to ${targetNumber} using rule: ${rule.name}`
+              );
+              const sendResult = await Promise.race([
+                ExpoSmsManager.send(targetNumber, messageToSend),
+                new Promise((_, reject) =>
+                  setTimeout(
+                    () =>
+                      reject(
+                        new Error(
+                          "SMS send timeout (may be emulator limitation)"
+                        )
+                      ),
+                    30000
+                  )
+                ),
+              ]);
+              console.log("SMS forwarded successfully:", sendResult);
+
+              await insertForwardedMessage({
+                originalSender: message.originatingAddress || "Unknown",
+                recipient: targetNumber,
+                messageBody: message.body,
+                customMessage: rule.customMessage || undefined,
+                keywordMatched: matchedKeyword,
+                ruleId: rule.id,
+                ruleName: rule.name,
+                status: "success",
+                timestamp,
+              });
+            } catch (error: any) {
+              console.error(`Failed to forward SMS to ${targetNumber}:`, error);
+              try {
+                await insertForwardedMessage({
+                  originalSender: message.originatingAddress || "Unknown",
+                  recipient: targetNumber,
+                  messageBody: message.body,
+                  customMessage: rule.customMessage || undefined,
+                  keywordMatched: matchedKeyword,
+                  ruleId: rule.id,
+                  ruleName: rule.name,
+                  status: "failed",
+                  timestamp,
+                  errorMessage: error?.message || "Unknown error",
+                });
+              } catch (dbError) {
+                console.error("Failed to log to database:", dbError);
+              }
+            }
+          })();
+
+          forwardingTasks.push(task);
+        }
+
+        if (rule.stopOnMatch) {
+          console.log(
+            `Stop-on-match enabled for rule: ${rule.name}. Stopping rule evaluation.`
+          );
+          break;
+        }
+      }
+
+      // Execute all forwarding tasks in parallel
+      if (forwardingTasks.length > 0) {
+        await Promise.allSettled(forwardingTasks);
+        console.log("All forwarding tasks completed");
       }
     };
 
@@ -164,5 +278,11 @@ export const useSmsForwarder = ({
         subscription.remove();
       }
     };
-  }, [enabled, includeKeywords, targetPhoneNumber, customMessage]);
+  }, [
+    enabled,
+    advancedMode,
+    simpleKeywords,
+    simpleTargetNumber,
+    simpleCustomMessage,
+  ]);
 };

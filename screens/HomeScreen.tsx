@@ -7,6 +7,7 @@ import {
   StyleSheet,
   useColorScheme,
   View,
+  Text,
 } from "react-native";
 import { useAtom } from "jotai";
 import {
@@ -14,6 +15,7 @@ import {
   phoneNumberAtom,
   bodyAtom,
   readPermissionsPolicyAtom,
+  advancedModeAtom,
 } from "../store/atoms";
 import { Colors } from "../constants/colors";
 import { useSmsForwarder, usePersistence } from "../hooks";
@@ -40,6 +42,7 @@ const HomeScreen = () => {
   const [readPermissionsPolicy, setReadPermissionsPolicy] = useAtom(
     readPermissionsPolicyAtom
   );
+  const [advancedMode, setAdvancedMode] = useAtom(advancedModeAtom);
 
   // Local state
   const [displayPermissionsPolicy, setDisplayPermissionsPolicy] =
@@ -54,9 +57,10 @@ const HomeScreen = () => {
   const includeData = includes.map(item => item.text);
   useSmsForwarder({
     enabled,
-    includeKeywords: includeData,
-    targetPhoneNumber: phoneNumber,
-    customMessage: body,
+    advancedMode,
+    simpleKeywords: includeData,
+    simpleTargetNumber: phoneNumber,
+    simpleCustomMessage: body,
   });
 
   const toggleSwitch = () => setEnabled(prev => !prev);
@@ -105,14 +109,53 @@ const HomeScreen = () => {
           }}
         />
 
-        <KeywordInputSection includes={includes} setIncludes={setIncludes} />
+        <Section title="Mode">
+          {advancedMode
+            ? "Using Advanced Mode (Multiple Rules)"
+            : "Using Simple Mode (Single Rule)"}
+        </Section>
+        <View style={styles.modeContainer}>
+          <Text
+            style={[
+              styles.modeText,
+              { color: isDarkMode ? Colors.lighter : Colors.darker },
+            ]}
+          >
+            {advancedMode ? "Advanced Mode" : "Simple Mode"}
+          </Text>
+          <CustomButton
+            title={advancedMode ? "Switch to Simple" : "Switch to Advanced"}
+            cb={() => setAdvancedMode(!advancedMode)}
+            buttonStyle={styles.modeToggleButton}
+            textStyle={styles.modeToggleText}
+          />
+        </View>
+        {advancedMode && (
+          <Text
+            style={[
+              styles.modeNote,
+              { color: isDarkMode ? Colors.light : Colors.dark },
+            ]}
+          >
+            Manage rules in the "Rules" tab
+          </Text>
+        )}
 
-        <PhoneNumberSection
-          phoneNumber={phoneNumber}
-          setPhoneNumber={setPhoneNumber}
-        />
+        {!advancedMode && (
+          <>
+            <KeywordInputSection
+              includes={includes}
+              setIncludes={setIncludes}
+            />
 
-        <CustomMessageSection body={body} setBody={setBody} />
+            <PhoneNumberSection
+              phoneNumber={phoneNumber}
+              setPhoneNumber={setPhoneNumber}
+            />
+
+            <CustomMessageSection body={body} setBody={setBody} />
+          </>
+        )}
 
         <CustomButton
           title={enabled ? "Stop" : "Start"}
@@ -152,6 +195,31 @@ const styles = StyleSheet.create({
   },
   startStopButtonText: {
     fontWeight: "bold",
+  },
+  modeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    gap: 10,
+  },
+  modeText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  modeToggleButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  modeToggleText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  modeNote: {
+    fontSize: 13,
+    marginTop: 8,
+    fontStyle: "italic",
   },
 });
 
