@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Modal,
-  Text,
-  TouchableWithoutFeedback,
-  useColorScheme,
-  View,
-} from "react-native";
+import { Modal, Text, TouchableWithoutFeedback, View } from "react-native";
 import CustomButton from "./Shared/CustomButton";
 
 type Props = {
@@ -15,7 +9,6 @@ type Props = {
 };
 
 const PermissionsPolicyModal = (props: Props) => {
-  const isDarkMode = useColorScheme() === "dark";
   const { visible, setVisible, setDisplayToggleModal } = props;
   return (
     <Modal
@@ -64,7 +57,7 @@ const PermissionsPolicyModal = (props: Props) => {
                 style={{
                   fontSize: 20,
                   fontWeight: "bold",
-                  color: isDarkMode ? "#ffffff" : "#000000",
+                  color: "#ffffff",
                   textAlign: "center",
                 }}
               >
@@ -78,7 +71,7 @@ const PermissionsPolicyModal = (props: Props) => {
                   fontSize: 16,
                   fontWeight: "bold",
                   textAlign: "center",
-                  color: isDarkMode ? "#ffffff" : "#000000",
+                  color: "#ffffff",
                 }}
               >
                 If you're not prompted to grant these permissions, please enable
