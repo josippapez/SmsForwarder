@@ -4,6 +4,7 @@ import * as ExpoBackgroundService from "../modules/expo-background-service";
 import * as ExpoSmsListener from "../modules/expo-sms-listener";
 import * as ExpoSmsManager from "../modules/expo-sms-manager";
 import type { SmsMessage } from "../types";
+import { initDatabase, insertForwardedMessage } from "../utils/database";
 
 interface UseSmsForwarderProps {
   enabled: boolean;
@@ -61,6 +62,79 @@ export const useSmsForwarder = ({
       }
     };
 
+    const handleSmsReceived = async (message: SmsMessage) => {
+      console.log("SMS received:", message);
+
+      const matchedKeyword = includeKeywords.find(keyword =>
+        message.body.includes(keyword)
+      );
+
+      if (!matchedKeyword || !targetPhoneNumber) {
+        console.log("No keyword match or no target number");
+        return;
+      }
+
+      console.log(
+        "Keyword matched:",
+        matchedKeyword,
+        "Forwarding to:",
+        targetPhoneNumber
+      );
+
+      const messageToSend = customMessage || message.body;
+      const timestamp = Date.now();
+
+      try {
+        console.log("Attempting to send SMS...");
+        const sendResult = await Promise.race([
+          ExpoSmsManager.send(targetPhoneNumber, messageToSend),
+          new Promise((_, reject) =>
+            setTimeout(
+              () =>
+                reject(
+                  new Error("SMS send timeout (may be emulator limitation)")
+                ),
+              30000
+            )
+          ),
+        ]);
+        console.log("SMS forwarded successfully, result:", sendResult);
+
+        // Log successful forward to database
+        console.log("Inserting into database...");
+        const insertId = await insertForwardedMessage({
+          originalSender: message.originatingAddress || "Unknown",
+          recipient: targetPhoneNumber,
+          messageBody: message.body,
+          customMessage: customMessage || undefined,
+          keywordMatched: matchedKeyword,
+          status: "success",
+          timestamp,
+        });
+        console.log("Logged to database with ID:", insertId);
+      } catch (error: any) {
+        console.error("Failed to forward SMS:", error);
+
+        // Log failed forward to database
+        try {
+          console.log("Inserting error into database...");
+          const insertId = await insertForwardedMessage({
+            originalSender: message.originatingAddress || "Unknown",
+            recipient: targetPhoneNumber,
+            messageBody: message.body,
+            customMessage: customMessage || undefined,
+            keywordMatched: matchedKeyword,
+            status: "failed",
+            timestamp,
+            errorMessage: error?.message || "Unknown error",
+          });
+          console.log("Logged error to database with ID:", insertId);
+        } catch (dbError) {
+          console.error("Failed to log to database:", dbError);
+        }
+      }
+    };
+
     const startForwarding = async () => {
       const hasPermissions = await requestPermissions();
 
@@ -69,24 +143,13 @@ export const useSmsForwarder = ({
         return;
       }
 
+      // Initialize database
+      await initDatabase();
+
       ExpoBackgroundService.startService();
       ExpoSmsListener.startService();
 
-      subscription = ExpoSmsListener.addListener((message: SmsMessage) => {
-        const shouldForward = includeKeywords.some(keyword =>
-          message.body.includes(keyword)
-        );
-
-        if (shouldForward && targetPhoneNumber) {
-          const messageToSend = customMessage || message.body;
-
-          ExpoSmsManager.send(targetPhoneNumber, messageToSend).catch(
-            (error: any) => {
-              console.error("Failed to forward SMS:", error);
-            }
-          );
-        }
-      });
+      subscription = ExpoSmsListener.addListener(handleSmsReceived);
     };
 
     if (enabled) {

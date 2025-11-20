@@ -1,80 +1,43 @@
-import React, { useState } from "react";
+import React from "react";
 import {
+  useColorScheme,
   ColorValue,
-  ScrollView,
   StatusBar,
   StatusBarStyle,
-  StyleSheet,
-  useColorScheme,
-  View,
+  Text,
 } from "react-native";
-import { useAtom } from "jotai";
-import {
-  includesAtom,
-  phoneNumberAtom,
-  bodyAtom,
-  readPermissionsPolicyAtom,
-} from "./store/atoms";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Colors } from "./constants/colors";
-import { useSmsForwarder, usePersistence } from "./hooks";
-import PermissionsPolicyModal from "./Components/PermissionsPolicyModal";
-import ToggleModal from "./Components/ToggleModal";
-import { Section, CustomButton } from "./Components/Shared";
-import {
-  KeywordInputSection,
-  PhoneNumberSection,
-  CustomMessageSection,
-} from "./Components/Sections";
+import HomeScreen from "./screens/HomeScreen";
+import HistoryScreen from "./screens/HistoryScreen";
+
+const Tab = createBottomTabNavigator();
+
+// Simple icon component using emoji for now (can be replaced with icon library later)
+const TabIcon = ({ name, size }: { name: string; size: number }) => {
+  return <Text style={{ fontSize: size * 0.8 }}>{name}</Text>;
+};
+
+// Tab icon components
+const HomeIcon = ({ size }: { size: number }) => (
+  <TabIcon name="⚙️" size={size} />
+);
+
+const HistoryIcon = ({ size }: { size: number }) => (
+  <TabIcon name="📋" size={size} />
+);
 
 /**
- * Main App Component - SMS Forwarder
- * Allows users to forward SMS messages based on keywords to a specified phone number
+ * Main App Component with Navigation
+ * Contains bottom tab navigation between Home (SMS configuration) and History screens
  */
 const App = () => {
   const isDarkMode = useColorScheme() === "dark";
 
-  // Global state from Jotai
-  const [includes, setIncludes] = useAtom(includesAtom);
-  const [phoneNumber, setPhoneNumber] = useAtom(phoneNumberAtom);
-  const [body, setBody] = useAtom(bodyAtom);
-  const [readPermissionsPolicy, setReadPermissionsPolicy] = useAtom(
-    readPermissionsPolicyAtom
-  );
-
-  // Local state
-  const [displayPermissionsPolicy, setDisplayPermissionsPolicy] =
-    useState(false);
-  const [visible, setVisible] = useState(false);
-  const [enabled, setEnabled] = useState(false);
-
-  // Enable persistence for Jotai atoms
-  usePersistence();
-
-  // Custom hooks
-  const includeData = includes.map(item => item.text);
-  useSmsForwarder({
-    enabled,
-    includeKeywords: includeData,
-    targetPhoneNumber: phoneNumber,
-    customMessage: body,
-  });
-
-  const toggleSwitch = () => setEnabled(prev => !prev);
-
-  const toggleVisible = () => {
-    if (!readPermissionsPolicy) {
-      return setDisplayPermissionsPolicy(true);
-    }
-    setVisible(prev => !prev);
-  };
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.black : Colors.white,
-    flex: 1,
-  };
-
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaProvider>
       <StatusBar
         animated={true}
         translucent
@@ -86,73 +49,43 @@ const App = () => {
         }
         showHideTransition={"fade"}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        bounces
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingVertical: 20,
-        }}
-        style={backgroundStyle}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Section
-          boldedTitle
-          title="SMS Forwarder"
-          sectionStyle={{
-            paddingVertical: 20,
+      <NavigationContainer>
+        <Tab.Navigator
+          screenOptions={{
+            headerShown: false,
+            tabBarStyle: {
+              backgroundColor: isDarkMode ? Colors.darker : Colors.white,
+              borderTopColor: isDarkMode ? Colors.dark : Colors.lighter,
+              elevation: 0,
+            },
+            tabBarActiveTintColor: Colors.primary,
+            tabBarInactiveTintColor: isDarkMode ? Colors.light : Colors.dark,
+            tabBarLabelStyle: {
+              fontSize: 12,
+              fontWeight: "600",
+            },
           }}
-        />
-
-        <KeywordInputSection includes={includes} setIncludes={setIncludes} />
-
-        <PhoneNumberSection
-          phoneNumber={phoneNumber}
-          setPhoneNumber={setPhoneNumber}
-        />
-
-        <CustomMessageSection body={body} setBody={setBody} />
-
-        <CustomButton
-          title={enabled ? "Stop" : "Start"}
-          cb={toggleVisible}
-          buttonStyle={styles.startStopButton}
-          textStyle={styles.startStopButtonText}
-        />
-      </ScrollView>
-
-      <PermissionsPolicyModal
-        visible={displayPermissionsPolicy}
-        setVisible={(state: boolean) => {
-          setDisplayPermissionsPolicy(state);
-        }}
-        setDisplayToggleModal={() => {
-          setVisible(true);
-          setReadPermissionsPolicy(true);
-        }}
-      />
-
-      <ToggleModal
-        isDarkMode={isDarkMode}
-        visible={visible}
-        setVisible={setVisible}
-        enabled={enabled}
-        toggleSwitch={toggleSwitch}
-      />
-    </View>
+        >
+          <Tab.Screen
+            name="Home"
+            component={HomeScreen}
+            options={{
+              tabBarLabel: "Configure",
+              tabBarIcon: HomeIcon,
+            }}
+          />
+          <Tab.Screen
+            name="History"
+            component={HistoryScreen}
+            options={{
+              tabBarLabel: "History",
+              tabBarIcon: HistoryIcon,
+            }}
+          />
+        </Tab.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 };
-
-const styles = StyleSheet.create({
-  startStopButton: {
-    borderRadius: 16,
-    paddingHorizontal: 26,
-    paddingVertical: 16,
-  },
-  startStopButtonText: {
-    fontWeight: "bold",
-  },
-});
 
 export default App;
