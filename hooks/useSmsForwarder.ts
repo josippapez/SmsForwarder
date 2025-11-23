@@ -40,7 +40,6 @@ export const useSmsForwarder = ({
 
       const permissions = [
         PermissionsAndroid.PERMISSIONS.SEND_SMS,
-        PermissionsAndroid.PERMISSIONS.READ_SMS,
         PermissionsAndroid.PERMISSIONS.RECEIVE_SMS,
       ];
 

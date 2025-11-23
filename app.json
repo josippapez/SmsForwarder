@@ -21,7 +21,6 @@
       "package": "com.smsforwarder",
       "permissions": [
         "android.permission.RECEIVE_SMS",
-        "android.permission.READ_SMS",
         "android.permission.SEND_SMS",
         "android.permission.READ_CONTACTS",
         "android.permission.FOREGROUND_SERVICE",
@@ -36,7 +35,9 @@
           "android": {
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
-            "minSdkVersion": 30
+            "minSdkVersion": 30,
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
           }
         }
       ],
