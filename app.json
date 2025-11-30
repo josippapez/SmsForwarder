@@ -3,7 +3,7 @@
     "name": "SMS Forwarder",
     "slug": "sms-forwarder",
     "version": "1.0.1",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "smsforwarder",

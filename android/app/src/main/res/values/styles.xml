@@ -1,9 +1,12 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
   <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
-    <item name="android:enforceNavigationBarContrast" tools:targetApi="29">true</item>
+    <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
     <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     <item name="colorPrimary">@color/colorPrimary</item>
-    <item name="android:statusBarColor">#1a1a1a</item>
+    <!-- Edge-to-edge support for Android 15+ -->
+    <item name="android:windowTranslucentStatus" tools:targetApi="19">true</item>
+    <item name="android:windowTranslucentNavigation" tools:targetApi="19">true</item>
+    <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="28">shortEdges</item>
   </style>
   <style name="Theme.App.SplashScreen" parent="AppTheme">
     <item name="android:windowBackground">@drawable/ic_launcher_background</item>
