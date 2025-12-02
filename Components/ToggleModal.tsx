@@ -6,6 +6,7 @@ import {
   Switch,
   TouchableWithoutFeedback,
   View,
+  Text,
 } from "react-native";
 import { fadeIn } from "../animations/Animations";
 import { Section } from "./Shared";
@@ -16,10 +17,20 @@ type Props = Readonly<{
   visible: boolean;
   setVisible: (visible: boolean) => void;
   toggleSwitch: () => void;
+  canToggle: boolean;
+  blockedMessage?: string | null;
 }>;
 
 function ToggleModal(props: Props) {
-  const { enabled, toggleSwitch, visible, setVisible, isDarkMode } = props;
+  const {
+    enabled,
+    toggleSwitch,
+    visible,
+    setVisible,
+    isDarkMode,
+    canToggle,
+    blockedMessage,
+  } = props;
   const animation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -80,7 +91,19 @@ function ToggleModal(props: Props) {
             ios_backgroundColor="#3e3e3e"
             onValueChange={toggleSwitch}
             value={enabled}
+            disabled={!canToggle}
           />
+          {!canToggle && blockedMessage && (
+            <Text
+              style={{
+                marginTop: 16,
+                color: isDarkMode ? "#f5f5f5" : "#333333",
+                textAlign: "center",
+              }}
+            >
+              {blockedMessage}
+            </Text>
+          )}
         </View>
       </View>
     </Modal>

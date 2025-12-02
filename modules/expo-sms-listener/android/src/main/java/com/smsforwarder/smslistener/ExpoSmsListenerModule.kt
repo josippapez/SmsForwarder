@@ -20,7 +20,7 @@ class ExpoSmsListenerModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("ExpoSmsListener")
 
-    Events("onSmsReceived")
+    Events("onSmsReceived", "onMmsReceived", "onRespondViaMessage")
 
     OnCreate {
       receiver = SmsReceiver(this@ExpoSmsListenerModule)
@@ -52,6 +52,28 @@ class ExpoSmsListenerModule : Module() {
       SmsReceiver.setModuleInstance(null)
       unregisterReceiver()
     }
+
+    Function("setContactMuted") { address: String, muted: Boolean ->
+      val context = appContext.reactContext ?: return@Function false
+      ContactPreferences.setMuted(context, address, muted)
+      true
+    }
+
+    Function("setContactBlocked") { address: String, blocked: Boolean ->
+      val context = appContext.reactContext ?: return@Function false
+      ContactPreferences.setBlocked(context, address, blocked)
+      true
+    }
+
+    Function("isContactMuted") { address: String ->
+      val context = appContext.reactContext ?: return@Function false
+      ContactPreferences.isMuted(context, address)
+    }
+
+    Function("isContactBlocked") { address: String ->
+      val context = appContext.reactContext ?: return@Function false
+      ContactPreferences.isBlocked(context, address)
+    }
   }
 
   private fun registerReceiverIfNecessary() {
@@ -60,7 +82,9 @@ class ExpoSmsListenerModule : Module() {
     val context = appContext.reactContext ?: return
 
     try {
-      val filter = IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION)
+      val filter = IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION).apply {
+        addAction(Telephony.Sms.Intents.SMS_DELIVER_ACTION)
+      }
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)

@@ -11,6 +11,13 @@ export interface SmsMessage {
   body: string;
   originatingAddress?: string;
   timestamp?: number;
+  box?: "inbox" | "sent" | "draft";
+  type?: "sms" | "mms";
+  subscriptionId?: number | null;
+  simSlotIndex?: number | null;
+  messageRef?: string | null;
+  rawPdu?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface ContactInfo {

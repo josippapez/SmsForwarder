@@ -61,9 +61,10 @@ const PermissionsPolicyModal = (props: Props) => {
                   textAlign: "center",
                 }}
               >
-                This app requires access to SMS Send, Read and Receive
-                permissions to function properly. You will be asked to grant
-                these permissions when you try to start the app on start button.
+                This app requires full SMS/MMS access (Send, Read, Receive,
+                Write), WAP Push & MMS delivery permissions, plus access to
+                contacts so forwarding can run as the default SMS app. You will
+                be asked to grant these permissions when you tap Start.
               </Text>
               <Text
                 style={{

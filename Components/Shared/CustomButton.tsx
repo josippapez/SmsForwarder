@@ -1,16 +1,17 @@
-import {animated, AnimatedStyle} from '@react-spring/native';
-import React from 'react';
+import { animated, AnimatedStyle } from "@react-spring/native";
+import React from "react";
 import {
   FlexAlignType,
   ImageSourcePropType,
   ImageStyle,
+  StyleProp,
   Text,
   TextStyle,
   TouchableOpacity,
   useColorScheme,
   View,
   ViewStyle,
-} from 'react-native';
+} from "react-native";
 
 type Props = {
   title?: string;
@@ -20,51 +21,65 @@ type Props = {
   align?: FlexAlignType;
   backgroundimage?: {
     image: ImageSourcePropType;
-    style: ImageStyle | AnimatedStyle<ImageStyle>;
+    style: StyleProp<ImageStyle>;
   };
+  disabled?: boolean;
 };
 
 const CustomButton = (props: Props) => {
-  const {title, cb, buttonStyle, textStyle, align, backgroundimage} = props;
+  const {
+    title,
+    cb,
+    buttonStyle,
+    textStyle,
+    align,
+    backgroundimage,
+    disabled = false,
+  } = props;
 
-  const isDarkMode = useColorScheme() === 'dark';
+  const isDarkMode = useColorScheme() === "dark";
 
   CustomButton.defaultProps.buttonStyle = {
     ...CustomButton.defaultProps.buttonStyle,
-    backgroundColor: isDarkMode ? '#5e5e5e' : '#d3d9df',
+    backgroundColor: isDarkMode ? "#5e5e5e" : "#d3d9df",
   };
 
   CustomButton.defaultProps.textStyle = {
     ...CustomButton.defaultProps.textStyle,
-    color: isDarkMode ? 'white' : 'black',
+    color: isDarkMode ? "white" : "black",
   };
 
   return (
     <TouchableOpacity
+      disabled={disabled}
+      activeOpacity={0.85}
       style={[
         CustomButton.defaultProps.buttonStyle,
         buttonStyle,
         {
           alignSelf: align,
-          width: buttonStyle.width,
-          justifyContent: 'center',
-          display: 'flex',
-          alignItems: 'center',
+          width: buttonStyle?.width,
+          justifyContent: "center",
+          display: "flex",
+          alignItems: "center",
+          opacity: disabled ? 0.6 : 1,
         },
       ]}
-      onPress={cb}>
+      onPress={cb}
+    >
       <View>
         {backgroundimage && (
           <animated.Image
             source={backgroundimage.image}
-            style={backgroundimage.style}
-            resizeMode={'cover'}
+            style={backgroundimage.style as any}
+            resizeMode={"cover"}
           />
         )}
         {title && (
           <Text
             adjustsFontSizeToFit
-            style={[CustomButton.defaultProps.textStyle, textStyle]}>
+            style={[CustomButton.defaultProps.textStyle, textStyle]}
+          >
             {title}
           </Text>
         )}
@@ -77,7 +92,7 @@ CustomButton.defaultProps = {
   buttonStyle: {
     borderRadius: 20,
     padding: 10,
-    width: 'auto',
+    width: "auto",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -88,7 +103,7 @@ CustomButton.defaultProps = {
   textStyle: {
     fontSize: 15,
   } as Partial<TextStyle>,
-  align: 'center' as FlexAlignType,
+  align: "center" as FlexAlignType,
 };
 
 export default CustomButton;

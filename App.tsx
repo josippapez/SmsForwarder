@@ -16,11 +16,39 @@ import { useAtom } from "jotai";
 import { Colors } from "./constants/colors";
 import HomeScreen from "./screens/HomeScreen";
 import HistoryScreen from "./screens/HistoryScreen";
+import InboxScreen from "./screens/InboxScreen";
+import ConversationScreen from "./screens/ConversationScreen";
+import SettingsScreen from "./screens/SettingsScreen";
 import { migrateToMultipleRules } from "./utils/migration";
 import { advancedModeAtom } from "./store/atoms";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const InboxStackNavigator = createNativeStackNavigator();
+const linking = {
+  prefixes: ["smsforwarder://", "exp+sms-forwarder://"],
+  config: {
+    screens: {
+      Home: "home",
+      Inbox: {
+        path: "inbox",
+        screens: {
+          InboxList: "",
+          Conversation: "conversation/:address?",
+        },
+      },
+      History: "history",
+      Settings: "settings",
+      Rules: {
+        path: "rules",
+        screens: {
+          RulesList: "",
+          EditRule: "edit/:ruleId?",
+        },
+      },
+    },
+  },
+};
 
 // Simple icon component using emoji for now (can be replaced with icon library later)
 const TabIcon = ({ name, size }: { name: string; size: number }) => {
@@ -29,7 +57,7 @@ const TabIcon = ({ name, size }: { name: string; size: number }) => {
 
 // Tab icon components
 const HomeIcon = ({ size }: { size: number }) => (
-  <TabIcon name="⚙️" size={size} />
+  <TabIcon name="🏠" size={size} />
 );
 
 const HistoryIcon = ({ size }: { size: number }) => (
@@ -38,6 +66,44 @@ const HistoryIcon = ({ size }: { size: number }) => (
 
 const RulesIcon = ({ size }: { size: number }) => (
   <TabIcon name="📝" size={size} />
+);
+
+const InboxIcon = ({ size }: { size: number }) => (
+  <TabIcon name="📥" size={size} />
+);
+const InboxStack = () => {
+  const isDarkMode = useColorScheme() === "dark";
+
+  return (
+    <InboxStackNavigator.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: isDarkMode ? Colors.darker : Colors.white,
+        },
+        headerTintColor: isDarkMode ? Colors.lighter : Colors.darker,
+        headerTitleStyle: {
+          fontWeight: "600",
+        },
+      }}
+    >
+      <InboxStackNavigator.Screen
+        name="InboxList"
+        component={InboxScreen}
+        options={{ headerShown: false }}
+      />
+      <InboxStackNavigator.Screen
+        name="Conversation"
+        component={ConversationScreen}
+        options={({ route }: any) => ({
+          title: route.params?.address || "Conversation",
+        })}
+      />
+    </InboxStackNavigator.Navigator>
+  );
+};
+
+const SettingsIcon = ({ size }: { size: number }) => (
+  <TabIcon name="⚙️" size={size} />
 );
 
 // Rules Stack Navigator
@@ -139,7 +205,7 @@ const App = () => {
         }
         showHideTransition={"fade"}
       />
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <Tab.Navigator
           screenOptions={{
             headerShown: false,
@@ -164,6 +230,14 @@ const App = () => {
               tabBarIcon: HomeIcon,
             }}
           />
+          <Tab.Screen
+            name="Inbox"
+            component={InboxStack}
+            options={{
+              tabBarLabel: "Inbox",
+              tabBarIcon: InboxIcon,
+            }}
+          />
           {advancedMode && (
             <Tab.Screen
               name="Rules"
@@ -180,6 +254,14 @@ const App = () => {
             options={{
               tabBarLabel: "History",
               tabBarIcon: HistoryIcon,
+            }}
+          />
+          <Tab.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{
+              tabBarLabel: "Settings",
+              tabBarIcon: SettingsIcon,
             }}
           />
         </Tab.Navigator>

@@ -1,90 +1,125 @@
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import {
   ColorValue,
+  Pressable,
   ScrollView,
   StatusBar,
   StatusBarStyle,
   StyleSheet,
-  useColorScheme,
-  View,
   Text,
+  View,
 } from "react-native";
-import { useAtom } from "jotai";
-import {
-  includesAtom,
-  phoneNumberAtom,
-  bodyAtom,
-  readPermissionsPolicyAtom,
-  advancedModeAtom,
-} from "../store/atoms";
-import { Colors } from "../constants/colors";
-import { useSmsForwarder, usePersistence } from "../hooks";
+import { useNavigation } from "@react-navigation/native";
 import PermissionsPolicyModal from "../Components/PermissionsPolicyModal";
 import ToggleModal from "../Components/ToggleModal";
-import { Section, CustomButton } from "../Components/Shared";
-import {
-  KeywordInputSection,
-  PhoneNumberSection,
-  CustomMessageSection,
-} from "../Components/Sections";
+import { Section } from "../Components/Shared";
+import { DefaultSmsRoleSection } from "../Components/Sections";
+import { Colors } from "../constants/colors";
+import ModeSwitchSection from "./home/ModeSwitchSection";
+import SimpleModeConfiguration from "./home/SimpleModeConfiguration";
+import StartStopControls from "./home/StartStopControls";
+import { useHomeScreenState } from "./home/useHomeScreenState";
 
 /**
  * Main Home Screen - SMS Forwarder Configuration
  * Allows users to configure SMS forwarding rules
  */
 const HomeScreen = () => {
-  const isDarkMode = useColorScheme() === "dark";
-
-  // Global state from Jotai
-  const [includes, setIncludes] = useAtom(includesAtom);
-  const [phoneNumber, setPhoneNumber] = useAtom(phoneNumberAtom);
-  const [body, setBody] = useAtom(bodyAtom);
-  const [readPermissionsPolicy, setReadPermissionsPolicy] = useAtom(
-    readPermissionsPolicyAtom
-  );
-  const [advancedMode, setAdvancedMode] = useAtom(advancedModeAtom);
-
-  // Local state
-  const [displayPermissionsPolicy, setDisplayPermissionsPolicy] =
-    useState(false);
-  const [visible, setVisible] = useState(false);
-  const [enabled, setEnabled] = useState(false);
-
-  // Enable persistence for Jotai atoms
-  usePersistence();
-
-  // Custom hooks
-  const includeData = includes.map(item => item.text);
-  useSmsForwarder({
-    enabled,
+  const navigation = useNavigation<any>();
+  const {
+    isDarkMode,
+    isAndroid,
+    includes,
+    setIncludes,
+    phoneNumber,
+    setPhoneNumber,
+    body,
+    setBody,
     advancedMode,
-    simpleKeywords: includeData,
-    simpleTargetNumber: phoneNumber,
-    simpleCustomMessage: body,
-  });
+    setAdvancedMode,
+    readPermissionsPolicy,
+    setReadPermissionsPolicy,
+    displayPermissionsPolicy,
+    setDisplayPermissionsPolicy,
+    isToggleModalVisible,
+    setIsToggleModalVisible,
+    forwardingEnabled,
+    canControlForwarder,
+    toggleSwitch,
+    toggleVisible,
+    roleState,
+    backgroundColor,
+  } = useHomeScreenState();
 
-  const toggleSwitch = () => setEnabled(prev => !prev);
-
-  const toggleVisible = () => {
-    if (!readPermissionsPolicy) {
-      return setDisplayPermissionsPolicy(true);
+  const shouldGateContent = isAndroid && !roleState.isDefault;
+  const defaultRoleSection = useMemo(() => {
+    if (!isAndroid) {
+      return null;
     }
-    setVisible(prev => !prev);
-  };
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.black : Colors.white,
-    flex: 1,
-  };
+    return (
+      <DefaultSmsRoleSection
+        isDefault={roleState.isDefault}
+        isRoleAvailable={roleState.isRoleAvailable}
+        loading={roleState.loading}
+        currentDefaultPackage={roleState.currentDefaultPackage}
+        error={roleState.error}
+        onRequestRole={roleState.requestRole}
+        onRefresh={roleState.refreshStatus}
+        onOpenSettings={roleState.openSettings}
+      />
+    );
+  }, [
+    isAndroid,
+    roleState.currentDefaultPackage,
+    roleState.error,
+    roleState.isDefault,
+    roleState.isRoleAvailable,
+    roleState.loading,
+    roleState.openSettings,
+    roleState.refreshStatus,
+    roleState.requestRole,
+  ]);
+
+  const roleStatusBanner =
+    !shouldGateContent && isAndroid ? (
+      <Pressable
+        style={[
+          styles.roleStatusBar,
+          {
+            backgroundColor: isDarkMode
+              ? Colors.background.card.dark
+              : Colors.background.card.light,
+            borderColor: isDarkMode
+              ? Colors.input.border.dark
+              : Colors.input.border.light,
+          },
+        ]}
+        onPress={() => navigation.navigate("Settings")}
+      >
+        <View style={styles.roleStatusBarTextGroup}>
+          <Text
+            style={[
+              styles.roleStatusBarLabel,
+              { color: isDarkMode ? Colors.light : Colors.dark },
+            ]}
+          >
+            Default SMS role active
+          </Text>
+          <Text style={styles.roleStatusBarHint} numberOfLines={1}>
+            SmsForwarder is handling messages. Tap to manage.
+          </Text>
+        </View>
+        <Text style={styles.roleStatusBarAction}>{"Settings ›"}</Text>
+      </Pressable>
+    ) : null;
 
   return (
     <View style={{ flex: 1 }}>
       <StatusBar
         animated={true}
         translucent
-        backgroundColor={
-          (isDarkMode ? Colors.black : Colors.white) as ColorValue
-        }
+        backgroundColor={backgroundColor as ColorValue}
         barStyle={
           (isDarkMode ? "light-content" : "dark-content") as StatusBarStyle
         }
@@ -98,7 +133,7 @@ const HomeScreen = () => {
           paddingHorizontal: 20,
           paddingVertical: 20,
         }}
-        style={backgroundStyle}
+        style={{ backgroundColor, flex: 1 }}
         keyboardShouldPersistTaps="handled"
       >
         <Section
@@ -109,60 +144,48 @@ const HomeScreen = () => {
           }}
         />
 
-        <Section title="Mode">
-          {advancedMode
-            ? "Using Advanced Mode (Multiple Rules)"
-            : "Using Simple Mode (Single Rule)"}
-        </Section>
-        <View style={styles.modeContainer}>
-          <Text
-            style={[
-              styles.modeText,
-              { color: isDarkMode ? Colors.lighter : Colors.darker },
-            ]}
-          >
-            {advancedMode ? "Advanced Mode" : "Simple Mode"}
-          </Text>
-          <CustomButton
-            title={advancedMode ? "Switch to Simple" : "Switch to Advanced"}
-            cb={() => setAdvancedMode(!advancedMode)}
-            buttonStyle={styles.modeToggleButton}
-            textStyle={styles.modeToggleText}
-          />
-        </View>
-        {advancedMode && (
-          <Text
-            style={[
-              styles.modeNote,
-              { color: isDarkMode ? Colors.light : Colors.dark },
-            ]}
-          >
-            Manage rules in the "Rules" tab
-          </Text>
-        )}
-
-        {!advancedMode && (
+        {shouldGateContent ? (
+          <View style={styles.roleGateWrapper}>
+            {defaultRoleSection}
+            <Text
+              style={[
+                styles.roleGateHint,
+                { color: isDarkMode ? Colors.light : Colors.dark },
+              ]}
+            >
+              SmsForwarder has to be the default SMS app before any rules or
+              history become available.
+            </Text>
+          </View>
+        ) : (
           <>
-            <KeywordInputSection
-              includes={includes}
-              setIncludes={setIncludes}
+            {roleStatusBanner}
+            <ModeSwitchSection
+              advancedMode={advancedMode}
+              isDarkMode={isDarkMode}
+              onToggleMode={() => setAdvancedMode(!advancedMode)}
             />
 
-            <PhoneNumberSection
-              phoneNumber={phoneNumber}
-              setPhoneNumber={setPhoneNumber}
-            />
+            {!advancedMode && (
+              <SimpleModeConfiguration
+                includes={includes}
+                setIncludes={setIncludes}
+                phoneNumber={phoneNumber}
+                setPhoneNumber={setPhoneNumber}
+                body={body}
+                setBody={setBody}
+              />
+            )}
 
-            <CustomMessageSection body={body} setBody={setBody} />
+            <StartStopControls
+              enabled={forwardingEnabled}
+              isDarkMode={isDarkMode}
+              disabled={!forwardingEnabled && !canControlForwarder}
+              canControlForwarder={canControlForwarder}
+              onPress={toggleVisible}
+            />
           </>
         )}
-
-        <CustomButton
-          title={enabled ? "Stop" : "Start"}
-          cb={toggleVisible}
-          buttonStyle={styles.startStopButton}
-          textStyle={styles.startStopButtonText}
-        />
       </ScrollView>
 
       <PermissionsPolicyModal
@@ -171,55 +194,60 @@ const HomeScreen = () => {
           setDisplayPermissionsPolicy(state);
         }}
         setDisplayToggleModal={() => {
-          setVisible(true);
+          setIsToggleModalVisible(true);
           setReadPermissionsPolicy(true);
         }}
       />
 
       <ToggleModal
         isDarkMode={isDarkMode}
-        visible={visible}
-        setVisible={setVisible}
-        enabled={enabled}
+        visible={isToggleModalVisible}
+        setVisible={setIsToggleModalVisible}
+        enabled={forwardingEnabled}
         toggleSwitch={toggleSwitch}
+        canToggle={canControlForwarder}
+        blockedMessage="Set SmsForwarder as the default SMS app to control forwarding."
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  startStopButton: {
-    borderRadius: 16,
-    paddingHorizontal: 26,
-    paddingVertical: 16,
+  roleGateWrapper: {
+    gap: 16,
+    paddingTop: 8,
   },
-  startStopButtonText: {
-    fontWeight: "bold",
-  },
-  modeContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    gap: 10,
-  },
-  modeText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  modeToggleButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  modeToggleText: {
+  roleGateHint: {
     fontSize: 14,
-    fontWeight: "600",
+    lineHeight: 20,
   },
-  modeNote: {
+  roleStatusBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 16,
+    gap: 16,
+  },
+  roleStatusBarTextGroup: {
+    flex: 1,
+    minWidth: 0,
+  },
+  roleStatusBarLabel: {
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  roleStatusBarHint: {
     fontSize: 13,
-    marginTop: 8,
-    fontStyle: "italic",
+    color: Colors.text.secondary,
+    marginTop: 2,
+  },
+  roleStatusBarAction: {
+    fontWeight: "700",
+    color: Colors.primary,
   },
 });
 

@@ -9,9 +9,17 @@
   <!-- Required for SMS forwarding functionality -->
   <uses-permission android:name="android.permission.RECEIVE_SMS" />
   <uses-permission android:name="android.permission.SEND_SMS" />
+  <uses-permission android:name="android.permission.READ_SMS" />
+  <uses-permission android:name="android.permission.WRITE_SMS" />
+  <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
+  <uses-permission android:name="android.permission.RECEIVE_MMS" />
+  <uses-permission android:name="android.permission.SEND_RESPOND_VIA_MESSAGE" />
 
   <!-- Required for contact picker -->
   <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+  <!-- Declare telephony hardware requirement for default SMS role -->
+  <uses-feature android:name="android.hardware.telephony" android:required="true" />
 
   <queries>
     <intent>
@@ -43,6 +51,14 @@
         <data android:scheme="smsforwarder" />
         <data android:scheme="exp+sms-forwarder" />
       </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.SENDTO" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:scheme="sms" />
+        <data android:scheme="smsto" />
+        <data android:scheme="mms" />
+        <data android:scheme="mmsto" />
+      </intent-filter>
     </activity>
     <service android:name="com.smsforwarder.backgroundservice.BackgroundService"
       android:exported="false" android:foregroundServiceType="dataSync" />
@@ -51,6 +67,37 @@
       <intent-filter android:priority="2147483647">
         <action android:name="android.provider.Telephony.SMS_RECEIVED" />
       </intent-filter>
+      <intent-filter android:priority="2147483647">
+        <action android:name="android.provider.Telephony.SMS_DELIVER" />
+      </intent-filter>
     </receiver>
+    <receiver android:name="com.smsforwarder.smslistener.MmsWapPushReceiver"
+      android:exported="true" android:permission="android.permission.BROADCAST_WAP_PUSH">
+      <intent-filter android:priority="2147483647">
+        <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
+        <data android:mimeType="application/vnd.wap.mms-message" />
+      </intent-filter>
+      <intent-filter android:priority="2147483647">
+        <action android:name="android.provider.Telephony.WAP_PUSH_RECEIVED" />
+        <data android:mimeType="application/vnd.wap.mms-message" />
+      </intent-filter>
+    </receiver>
+    <service android:name="com.smsforwarder.smslistener.DefaultSmsHeadlessSendService"
+      android:exported="true" android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE">
+      <intent-filter>
+        <action android:name="android.intent.action.RESPOND_VIA_MESSAGE" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:scheme="sms" />
+        <data android:scheme="smsto" />
+        <data android:scheme="mms" />
+        <data android:scheme="mmsto" />
+      </intent-filter>
+    </service>
+    <service android:name="com.smsforwarder.smslistener.SmsCarrierMessagingService"
+      android:exported="true" android:permission="android.permission.BIND_CARRIER_SERVICES">
+      <intent-filter>
+        <action android:name="android.service.carrier.CarrierMessagingService" />
+      </intent-filter>
+    </service>
   </application>
 </manifest>
