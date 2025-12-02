@@ -19,6 +19,10 @@ import {
 import { Section } from "../Components/Shared";
 import * as ExpoSmsListener from "../modules/expo-sms-listener";
 
+type ConversationListItem = InboundMessageRecord & {
+  hasUnread: boolean;
+};
+
 const PAGE_LIMIT = 200;
 
 const InboxScreen = () => {
@@ -106,9 +110,46 @@ const InboxScreen = () => {
     }
   }, []);
 
-  const renderItem = ({ item }: { item: InboundMessageRecord }) => {
+  const handleConversationPress = useCallback(
+    async (address: string) => {
+      const idsForAddress = messages
+        .filter(msg => msg.address === address && !msg.isRead)
+        .map(msg => msg.id);
+
+      if (idsForAddress.length > 0) {
+        await handleMarkRead(idsForAddress);
+      }
+
+      navigation.navigate("Conversation", {
+        address,
+      });
+    },
+    [handleMarkRead, messages, navigation]
+  );
+
+  const conversations = useMemo<ConversationListItem[]>(() => {
+    const grouped = new Map<string, ConversationListItem>();
+
+    messages.forEach(msg => {
+      const key = msg.address || "Unknown";
+      const existing = grouped.get(key);
+      const hasUnread = (existing?.hasUnread ?? false) || !msg.isRead;
+
+      if (!existing || msg.timestamp > existing.timestamp) {
+        grouped.set(key, { ...msg, address: key, hasUnread });
+      } else {
+        grouped.set(key, { ...existing, hasUnread });
+      }
+    });
+
+    return Array.from(grouped.values()).sort(
+      (a, b) => b.timestamp - a.timestamp
+    );
+  }, [messages]);
+
+  const renderItem = ({ item }: { item: ConversationListItem }) => {
     const timestampLabel = formatTimestamp(item.timestamp);
-    const unread = !item.isRead;
+    const unread = item.hasUnread;
     const snippet = item.body || "(No body)";
 
     return (
@@ -122,10 +163,7 @@ const InboxScreen = () => {
           },
         ]}
         onPress={() => {
-          handleMarkRead(item.id);
-          navigation.navigate("Conversation", {
-            address: item.address,
-          });
+          handleConversationPress(item.address);
         }}
       >
         <View style={styles.threadContent}>
@@ -178,12 +216,12 @@ const InboxScreen = () => {
   };
 
   const headerLabel = useMemo(() => {
-    const unreadCount = unreadIds.length;
+    const unreadCount = conversations.filter(conv => conv.hasUnread).length;
     if (unreadCount === 0) {
-      return `${messages.length} conversations`;
+      return `${conversations.length} conversations`;
     }
-    return `${messages.length} conversations • ${unreadCount} unread`;
-  }, [messages.length, unreadIds.length]);
+    return `${conversations.length} conversations • ${unreadCount} unread`;
+  }, [conversations]);
 
   return (
     <View style={{ flex: 1, backgroundColor: listBackground.backgroundColor }}>
@@ -203,8 +241,8 @@ const InboxScreen = () => {
       ) : (
         <FlatList
           style={listBackground}
-          data={messages}
-          keyExtractor={item => item.id.toString()}
+          data={conversations}
+          keyExtractor={item => `${item.address}-${item.id}`}
           renderItem={renderItem}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -217,7 +255,7 @@ const InboxScreen = () => {
                   textAlign: "center",
                 }}
               >
-                No inbound messages yet.
+                No conversations yet.
               </Text>
             </View>
           )}

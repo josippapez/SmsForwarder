@@ -119,13 +119,13 @@ If this is your first upload with a new keystore:
 
 Current version:
 
-- Version Name: 1.0.1
-- Version Code: 6005
+- Version Name: 1.1.1
+- Version Code: 6006
 
 For the next update, increment these values in:
 
-- `app.json`: `"version": "1.0.2"`
-- `android/app/build.gradle`: `versionCode 6006` and `versionName "1.0.2"`
+- `app.json`: `"version": "1.1.2"`
+- `android/app/build.gradle`: `versionCode 6007` and `versionName "1.1.2"`
 
 ## ABI Splits Configuration
 
